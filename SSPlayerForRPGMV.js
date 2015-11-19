@@ -69,7 +69,8 @@
 //	        DataManager._errorUrl = DataManager._errorUrl || url;
 //	    };
 	    xhr.send();
-	}
+	}	
+})();
 ////////////////////////////////////////////////////////////
 // SsImageList
 ////////////////////////////////////////////////////////////
@@ -532,4 +533,3 @@ SsSprite.prototype.getPartState = function (name) {
 		},this);
 	}
 
-})();

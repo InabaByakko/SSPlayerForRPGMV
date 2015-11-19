@@ -28,11 +28,11 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 1. 作成されたJSONファイルとPNGパーツ画像ファイルを、img/animations/ssas フォルダを作成しその中に格納します。（格納フォルダはプラグインパラメータで変更可能です。）
 1. 再生を開始するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
 ```JavaScript
-SsFile play (jsonファイル名) (x座標) (y座標)
+SsPlayer play (jsonファイル名) (x座標) (y座標)
 ```
 1. 再生を停止するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
 ```JavaScript
-SsFile stop
+SsPlayer stop
 ```
 
 ---

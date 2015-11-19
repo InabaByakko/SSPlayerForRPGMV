@@ -43,8 +43,11 @@
 	        Game_Interpreter.prototype.pluginCommand;
 	Game_Interpreter.prototype.pluginCommand = function(command, args) {
 	    _Game_Interpreter_pluginCommand.call(this, command, args);
-	    if (command === "SsFile" && args[0] === "play") {
+	    if (command === "SsPlayer" && args[0] === "play") {
 	    	loadSsAnimation(args[1], args[2], args[3]);
+	    }
+	    if (command === "SsPlayer" && args[0] === "stop") {
+	    	SceneManager._scene.removeChild(sprite);
 	    }
 	};
 	

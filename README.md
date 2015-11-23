@@ -2,6 +2,8 @@
 
 ※ 暫定ドキュメントです。
 
+※ I need transrators for this document.
+
 ## Description - このリポジトリについて
 
 SpriteStudioで作成されたアニメーションを再生できるようにする、RPGツクールMV用プラグインです。
@@ -28,12 +30,32 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 1. 作成されたJSONファイルとPNGパーツ画像ファイルを、img/animations/ssas フォルダを作成しその中に格納します。（格納フォルダはプラグインパラメータで変更可能です。）
 1. 再生を開始するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
 ```JavaScript
-SsPlayer play (jsonファイル名) (x座標) (y座標)
+SsPlayer play (ラベル名) (jsonファイル名) (x座標) (y座標)
 ```
 1. 再生を停止するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
 ```JavaScript
-SsPlayer stop
+SsPlayer stop (ラベル名) 
 ```
+
+### 他プラグインで使用する場合の詳細
+
+SsSprite オブジェクトを生成して、イベントコマンド以外の部分から使用する方法です。
+
+1. 何らかの方法で、アニメーションJSONファイルを読み込む。
+1. jsonデータから、SsImageListとSsAnimationオブジェクトを生成する。  
+```JavaScript
+var imageList = new SsImageList(jsonData.images, PluginManager.parameters('SSPlayerForRPGMV')['Animation File Path'], true);
+var animation = new SsAnimation(jsonData.animation, imageList);
+```
+3. SsSpriteオブジェクトを生成する。
+```JavaScript
+var sprite = new SsSprite(animation);
+```
+4. Sceneクラス直下やSpriteSetなどにaddChildする。
+
+updateメソッドは、addChildされると毎フレーム定期的に呼び出されます。
+
+表示を消去したい場合は、addChildしたクラスで`removeChild`すればOKです。
 
 ---
 

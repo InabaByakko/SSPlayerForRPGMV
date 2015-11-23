@@ -16,7 +16,20 @@
  * Those plug-ins must be installed under this
  * plug-in.
  * 
+ * For more information, please look at README.md
+ * in the Github repository.
+ * https://github.com/InabaByakko/SSPlayerForRPGMV
  * 
+ * Plug-in commands:
+ *   # Play an animation data saved in file "animdata.json"
+ *   # at position (300, 400), and put the label named
+ *   # "label". It is repeated endlessly.
+ *   SsPlayer play label animdata.json 300 400
+ *   
+ *   # Stop an animation which a label called "label" was
+ *   # attached to.
+ *   SsPlayer stop label
+ *   
  */
 
 /*:ja
@@ -32,6 +45,19 @@
  * 一部のプラグインはこのプラグインに依存しています。
  * 依存プラグインを使用する際は、このプラグインよりも下の位置に
  * インストールしてください。
+ * 
+ * 詳しい使い方は、GithubリポジトリのREADME.mdをお読み
+ * ください。
+ * https://github.com/InabaByakko/SSPlayerForRPGMV
+ * 
+ * プラグインコマンド:
+ *   # animdata.json に保存されたアニメーションデータを、
+ *   # labelという名前でラベルを付け、(300, 400)の座標で
+ *   # 停止するまで無限に再生します。
+ *   SsPlayer play label animdata.json 300 400
+ *   
+ *   # ラベル名labelで再生したアニメーションを停止します。
+ *   SsPlayer stop label
  */
 
 (function() {
@@ -39,40 +65,125 @@
 	var parameters = PluginManager.parameters('SSPlayerForRPGMV');
     var animationDir = String(parameters['Animation File Path'] || "img/animations/ssas") + "/";
 	
-	var _Game_Interpreter_pluginCommand =
-	        Game_Interpreter.prototype.pluginCommand;
-	Game_Interpreter.prototype.pluginCommand = function(command, args) {
-	    _Game_Interpreter_pluginCommand.call(this, command, args);
-	    if (command === "SsPlayer" && args[0] === "play") {
-	    	loadSsAnimation(args[1], args[2], args[3]);
-	    }
-	    if (command === "SsPlayer" && args[0] === "stop") {
-	    	SceneManager._scene.removeChild(sprite);
-	    }
-	};
+    var _Game_Interpreter_pluginCommand =
+        Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function(command, args) {
+    _Game_Interpreter_pluginCommand.call(this, command, args);
+
+    if (command === "SsPlayer" && args[0] === "play") {
+    	$gameScreen.addToSsPlayList(args[1], new SsPlayer());
+    	$gameScreen.getSsPlayerByLabel(args[1]).loadAnimation(args[2], args[3], args[4]);
+    }
+    
+    if (command === "SsPlayer" && args[0] === "stop") {
+    	$gameScreen.removeSsPlayerByLabel(args[1]);
+    }
+};
 	
-	loadSsAnimation = function(filename, x, y) {
-		var result = null;
+	
+	function SsPlayList() {
+		this.players = {};
+	}
+	
+	function SsPlayer() {
+		this.jsonData = null;
+		this.sprite = null;
+	}
+	
+	SsPlayer.prototype.loadAnimation = function(filename, x, y, loop) {
 		var xhr = new XMLHttpRequest();
 	    var url = animationDir+filename;
 	    xhr.open('GET', url);
 	    xhr.overrideMimeType('application/json');
 	    xhr.onload = function(x, y) {
 	        if (xhr.status < 400) {
-	            result = JSON.parse(xhr.responseText)[0];
-	            var imageList = new SsImageList(result.images, animationDir, true);
-	            var animation = new SsAnimation(result.animation, imageList);
-	            sprite = new SsSprite(animation);
-	            sprite.x = x;
-	            sprite.y = y;
-	            SceneManager._scene.addChild(sprite);
+	            this.jsonData = JSON.parse(xhr.responseText)[0];
+	            var imageList = new SsImageList(this.jsonData.images, animationDir, true);
+	            var animation = new SsAnimation(this.jsonData.animation, imageList);
+	            this.sprite = new SsSprite(animation);
+	            this.sprite.x = x;
+	            this.sprite.y = y;
 	        }
-	    }.bind(null, x, y);
+	    }.bind(this, x, y);
 //	    xhr.onerror = function() {
 //	        DataManager._errorUrl = DataManager._errorUrl || url;
 //	    };
 	    xhr.send();
-	}	
+	};
+	
+	SsPlayer.prototype.dispose = function() {
+		this.sprite = null;
+	};
+	
+	var _Game_Screen_clear = Game_Screen.prototype.clear;
+	Game_Screen.prototype.clear = function() {
+		_Game_Screen_clear.call(this);
+		this.clearSsPlayList();
+	};
+	
+	Game_Screen.prototype.clearSsPlayList = function() {
+		this._ssPlayList = null;
+		this._ssPlayList = new SsPlayList();
+	};
+	
+	Game_Screen.prototype.addToSsPlayList = function(label, player) {
+		if (label in this._ssPlayList.players) {
+    		// TODO:消去処理をいれる
+    	}
+		this._ssPlayList.players[label] = player;
+	};
+	
+	Game_Screen.prototype.removeSsPlayerByLabel = function(label) {
+		this._ssPlayList.players[label].dispose();
+		this._ssPlayList.players[label] = null;
+	};
+	
+	Game_Screen.prototype.getSsPlayerByLabel = function(label) {
+		return this._ssPlayList.players[label];
+	};
+	
+	Game_Screen.prototype.getSsSprites = function() {
+		var result = [];
+		for (var key in this._ssPlayList.players) {
+			if (this._ssPlayList.players[key] != null && this._ssPlayList.players[key].sprite != null) {
+				result.push(this._ssPlayList.players[key].sprite);
+			}
+		}
+		return result;
+	};
+	
+	var _Spriteset_Base_createUpperLayer = Spriteset_Base.prototype.createUpperLayer;
+	Spriteset_Base.prototype.createUpperLayer = function(){
+		_Spriteset_Base_createUpperLayer.call(this);
+		this.createSsSprites();
+	};
+	
+	Spriteset_Base.prototype.createSsSprites = function() {
+		this._ssContainer = new Sprite();
+		this.addChild(this._ssContainer);
+	};
+	
+	var _Spriteset_Base_update = Spriteset_Base.prototype.update;
+	Spriteset_Base.prototype.update = function() {
+		_Spriteset_Base_update.call(this);
+		this.updateSsContainer();
+	};
+	
+	Spriteset_Base.prototype.updateSsContainer = function() {
+		var preparedSprites = $gameScreen.getSsSprites();
+		preparedSprites.forEach(function(sprite, index, array){
+			if (this._ssContainer.children.indexOf(sprite) < 0){
+				this._ssContainer.addChild(sprite)
+			}
+		}, this);
+		
+		this._ssContainer.children.forEach(function(sprite, index, array){
+			if (preparedSprites.indexOf(sprite) < 0 ) {
+				this._ssContainer.removeChild(sprite);
+			}
+		}, this);
+	};
+	
 })();
 ////////////////////////////////////////////////////////////
 // SsImageList

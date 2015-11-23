@@ -392,10 +392,10 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV, partStat
 				var tex_h = texture.height;
 				var spr_part = new PIXI.Strip(texture);
 				var verts = new Float32Array([
-				                              (-ox + translate[0]) * scale.x, (-oy + translate[1]) * scale.y,
-				                              (sw - ox + translate[2]) * scale.x, (-oy + translate[3]) * scale.y,
-				                              (-ox + translate[4]) * scale.x, (sh - oy + translate[5]) * scale.y,
-				                              (sw - ox + translate[6]) * scale.x, (sh - oy + translate[7]) * scale.y
+				                              (-ox + translate[0]), (-oy + translate[1]) ,
+				                              (sw - ox + translate[2]), (-oy + translate[3]),
+				                              (-ox + translate[4]), (sh - oy + translate[5]),
+				                              (sw - ox + translate[6]), (sh - oy + translate[7])
 				                              ]);
 				var uvs = new Float32Array([
 				                            sx / tex_w, sy / tex_h,
@@ -405,16 +405,16 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV, partStat
 				                            ]);
 				spr_part.vertices = verts;
 				spr_part.uvs = uvs;
-				spr_part.pibot = new PIXI.Point(ox*1.0 / sw, oy*1.0 / sh);
+				spr_part.pivot = new PIXI.Point(ox*1.0 / sw, oy*1.0 / sh);
 				spr_part.dirty = true;
 			} else {
 				var texture = new PIXI.Texture(basetexture, new PIXI.Rectangle(sx, sy, sw, sh));
 				var spr_part = new PIXI.Sprite(texture);
 				spr_part.anchor = new PIXI.Point(ox*1.0 / sw, oy*1.0 / sh);
 			}
-			spr_part.position = new PIXI.Point(dx * scale.x, dy * scale.y);
+			spr_part.position = new PIXI.Point(dx, dy);
 			spr_part.rotation = -dang; 
-			spr_part.scale = new PIXI.Point(scale.x * fh, scale.y * fv);
+			spr_part.scale = new PIXI.Point(fh, fv);
 
 			sprites.push(spr_part);
 			

@@ -13,6 +13,10 @@ SpriteStudioで作成されたアニメーションを再生できるように�
 
 https://github.com/SpriteStudio/SSPlayerForCCH
 
+このソフトウェアは、MITライセンスのもとで公開されています。詳しくは LICENSE.md をお読み下さい。
+
+This software is released under the MIT License, see LICENSE.md.
+
 ## Usage - 使いかた
 
 ### プロジェクトへの組込み

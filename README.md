@@ -34,7 +34,7 @@ This software is released under the MIT License, see LICENSE.md.
 1. 作成されたJSONファイルとPNGパーツ画像ファイルを、img/animations/ssas フォルダを作成しその中に格納します。（格納フォルダはプラグインパラメータで変更可能です。）
 1. 再生を開始するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
 ```JavaScript
-SsPlayer play (ラベル名) (jsonファイル名) (x座標) (y座標)
+SsPlayer play (ラベル名) (jsonファイル名) (x座標) (y座標) (ループ回数 0:無限)
 ```
 1. 再生を停止するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
 ```JavaScript

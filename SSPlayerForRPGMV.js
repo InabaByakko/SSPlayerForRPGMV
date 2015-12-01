@@ -24,7 +24,13 @@
  *   # Play an animation data saved in file "animdata.json"
  *   # at position (300, 400), and put the label named
  *   # "label". It is repeated endlessly.
- *   SsPlayer play label animdata.json 300 400
+ *   # (An last number 0 can be omitted.)
+ *   SsPlayer play label animdata.json 300 400 0
+ *   
+ *   # Play an animation data saved in file "animdata.json"
+ *   # at position (300, 400), and put the label named
+ *   # "label". It is repeated at 3 times.
+ *   SsPlayer play label animdata.json 300 400 3
  *   
  *   # Stop an animation which a label called "label" was
  *   # attached to.
@@ -54,7 +60,13 @@
  *   # animdata.json に保存されたアニメーションデータを、
  *   # labelという名前でラベルを付け、(300, 400)の座標で
  *   # 停止するまで無限に再生します。
- *   SsPlayer play label animdata.json 300 400
+ *   # (最後の 0 は省略可能です。)
+ *   SsPlayer play label animdata.json 300 400 0
+ *   
+ *   # animdata.json に保存されたアニメーションデータを、
+ *   # labelという名前でラベルを付け、(300, 400)の座標で
+ *   # 3回ループするまで再生します。
+ *   SsPlayer play label animdata.json 300 400 3
  *   
  *   # ラベル名labelで再生したアニメーションを停止します。
  *   SsPlayer stop label
@@ -68,17 +80,18 @@
     var _Game_Interpreter_pluginCommand =
         Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
-    _Game_Interpreter_pluginCommand.call(this, command, args);
-
-    if (command === "SsPlayer" && args[0] === "play") {
-    	$gameScreen.addToSsPlayList(args[1], new SsPlayer());
-    	$gameScreen.getSsPlayerByLabel(args[1]).loadAnimation(args[2], args[3], args[4]);
-    }
-    
-    if (command === "SsPlayer" && args[0] === "stop") {
-    	$gameScreen.removeSsPlayerByLabel(args[1]);
-    }
-};
+	    _Game_Interpreter_pluginCommand.call(this, command, args);
+	
+	    if (command === "SsPlayer" && args[0] === "play") {
+	    	$gameScreen.addToSsPlayList(args[1], new SsPlayer());
+	    	var loop = Number(args[5] || 0);
+	    	$gameScreen.getSsPlayerByLabel(args[1]).loadAnimation(args[2], args[3], args[4], loop);
+	    }
+	    
+	    if (command === "SsPlayer" && args[0] === "stop") {
+	    	$gameScreen.removeSsPlayerByLabel(args[1]);
+	    }
+	};
 	
 	
 	function SsPlayList() {
@@ -95,7 +108,7 @@
 	    var url = animationDir+filename;
 	    xhr.open('GET', url);
 	    xhr.overrideMimeType('application/json');
-	    xhr.onload = function(x, y) {
+	    xhr.onload = function(x, y, loop) {
 	        if (xhr.status < 400) {
 	            this.jsonData = JSON.parse(xhr.responseText)[0];
 	            var imageList = new SsImageList(this.jsonData.images, animationDir, true);
@@ -103,8 +116,9 @@
 	            this.sprite = new SsSprite(animation);
 	            this.sprite.x = x;
 	            this.sprite.y = y;
+	            this.sprite.setLoop(loop);
 	        }
-	    }.bind(this, x, y);
+	    }.bind(this, x, y, loop);
 //	    xhr.onerror = function() {
 //	        DataManager._errorUrl = DataManager._errorUrl || url;
 //	    };
@@ -434,7 +448,7 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV, partStat
 ////////////////////////////////////////////////////////////
 
 function SsSprite(animation) {
-	PIXI.DisplayObjectContainer.call( this );
+	Sprite.call( this );
 
 	// プライベート変数
 	// Private variables.
@@ -446,6 +460,7 @@ function SsSprite(animation) {
 		loop: 0,
 		loopCount: 0,
 		endCallBack: null,    // draw end callback
+		//isPlaying: false,
 
 		partStates: null,
 		initPartStates: function () {
@@ -468,7 +483,7 @@ function SsSprite(animation) {
 	
 }
 
-SsSprite.prototype = Object.create(PIXI.DisplayObjectContainer.prototype);
+SsSprite.prototype = Object.create(Sprite.prototype);
 SsSprite.prototype.constructor = SsSprite;
 
 // ※未実装
@@ -484,13 +499,6 @@ SsSprite.prototype.setAnimation = function (animation) {
 	this.inner.playingFrame = 0;
 	this.inner.prevDrawnTime = 0;
 	this.clearLoopCount();
-}
-
-// 座標一括設定
-// Set position.
-SsSprite.prototype.move = function (x, y) {
-	this.position.x = x;
-	this.position.y = y;
 }
 
 // アニメーションの取得
@@ -566,13 +574,29 @@ SsSprite.prototype.getPartState = function (name) {
 	return this.inner.partStates[partNo];
 }
 
+// 現在再生中か
+SsSprite.prototype.isPlaying = function() {
+	if (this.inner.loop == 0){
+		return true;
+	}else if (this.inner.loop > this.inner.loopCount){
+		return true;
+	}
+	return false;
+}
+
 // 描画実行
 // Drawing method.
 	SsSprite.prototype.update = function() {
 		if (this.inner.animation == null)
 			return;
-
-		if (this.inner.loop == 0 || this.inner.loop > this.inner.loopCount) {
+		
+		// 子パーツスプライトの削除
+		// Remove child sprites.
+		if (this.children.length > 0) {
+			this.removeChildren(0, this.children.length);
+		}
+		
+		if (this.isPlaying()) {
 			// フレームを進める
 			// To next frame.
 			this.inner.playingFrame += (1.0 / (60 / this.inner.animation
@@ -632,18 +656,14 @@ SsSprite.prototype.getPartState = function (name) {
 					}
 				}
 			}
+			this.inner.animation.getPartSprites(this.getFrameNo(),this.flipH, this.flipV, 
+                    this.inner.partStates, this.scale).forEach(function(val,index,ar){
+			this.addChild(val);
+			},this);
 		} else {
 			// // 再生停止
 			// // Stop animation.
 			this.inner.playingFrame = 0;
 		}
-
-		if (this.children.length > 0)
-			this.removeChildren(0, this.children.length);
-
-		this.inner.animation.getPartSprites(this.getFrameNo(),this.flipH, this.flipV, 
-			                          this.inner.partStates, this.scale).forEach(function(val,index,ar){
-			this.addChild(val);
-		},this);
 	}
 

@@ -428,7 +428,7 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV, partStat
 			}
 			spr_part.position = new PIXI.Point(dx, dy);
 			spr_part.rotation = -dang; 
-			spr_part.scale = new PIXI.Point(fh, fv);
+			spr_part.scale = new PIXI.Point(scaleX * fh, scaleY * fv);
 
 			sprites.push(spr_part);
 			

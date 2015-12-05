@@ -1,4 +1,4 @@
-# SSPlayerForRPGMV
+# SpriteStudioPlayerForRPGMV
 
 ※ 暫定ドキュメントです。
 

@@ -120,6 +120,9 @@
                 this.sprite.x = x;
                 this.sprite.y = y;
                 this.sprite.setLoop(loop);
+                this.sprite.setEndCallBack(function(){
+                    this.sprite = null;
+                }.bind(this));
             }
         }.bind(this, x, y, loop);
         // xhr.onerror = function() {
@@ -596,14 +599,12 @@ SsSprite.prototype.isPlaying = function() {
 // 描画実行
 // Drawing method.
 SsSprite.prototype.update = function() {
-    if (this.inner.animation == null)
-        return;
-
-    // 子パーツスプライトの削除
-    // Remove child sprites.
     if (this.children.length > 0) {
         this.removeChildren(0, this.children.length);
     }
+    
+    if (this.inner.animation == null)
+        return;
 
     if (this.isPlaying()) {
         // フレームを進める
@@ -651,9 +652,10 @@ SsSprite.prototype.update = function() {
                         this.inner.playingFrame += this.inner.animation
                                 .getFrameCount();
                 } else {
-                    // 再生停止、先頭フレームへ
-                    // Stop animation, to first frame.
-                    this.inner.playingFrame = 0;
+                    // 再生停止、最終フレームへ
+                    // Stop animation, to last frame.
+                    this.inner.playingFrame = this.inner.animation
+                            .getFrameCount() - 1;
                     // 停止時コールバック呼び出し
                     // Call finished callback.
                     if (this.inner.endCallBack != null) {
@@ -662,14 +664,14 @@ SsSprite.prototype.update = function() {
                 }
             }
         }
-        this.inner.animation.getPartSprites(this.getFrameNo(), this.flipH,
-                this.flipV, this.inner.partStates, this.scale).forEach(
-                function(val, index, ar) {
-                    this.addChild(val);
-                }, this);
     } else {
         // // 再生停止
         // // Stop animation.
-        this.inner.playingFrame = 0;
+        //this.inner.playingFrame = 0;
     }
+    this.inner.animation.getPartSprites(this.getFrameNo(), this.flipH,
+            this.flipV, this.inner.partStates, this.scale).forEach(
+            function(val, index, ar) {
+                this.addChild(val);
+            }, this);
 }

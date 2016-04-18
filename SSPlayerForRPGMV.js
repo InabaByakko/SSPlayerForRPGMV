@@ -125,9 +125,6 @@
                 }.bind(this));
             }
         }.bind(this, x, y, loop);
-        // xhr.onerror = function() {
-        // DataManager._errorUrl = DataManager._errorUrl || url;
-        // };
         xhr.send();
     };
 
@@ -146,23 +143,32 @@
         this._ssPlayList = new SsPlayList();
     };
 
-    Game_Screen.prototype.addToSsPlayList = function(label, player) {
+    Game_Screen.prototype.checkSsPlayListDefined = function(){
+        if (this._ssPlayList === undefined)
+            this.clearSsPlayList();
+    }
+
+    Game_Screen.prototype.addToSsPlayList = function (label, player) {
+        this.checkSsPlayListDefined();
         if (label in this._ssPlayList.players) {
             // TODO:消去処理をいれる
         }
         this._ssPlayList.players[label] = player;
     };
 
-    Game_Screen.prototype.removeSsPlayerByLabel = function(label) {
+    Game_Screen.prototype.removeSsPlayerByLabel = function (label) {
+        this.checkSsPlayListDefined();
         this._ssPlayList.players[label].dispose();
         this._ssPlayList.players[label] = null;
     };
 
-    Game_Screen.prototype.getSsPlayerByLabel = function(label) {
+    Game_Screen.prototype.getSsPlayerByLabel = function (label) {
+        this.checkSsPlayListDefined();
         return this._ssPlayList.players[label];
     };
 
-    Game_Screen.prototype.getSsSprites = function() {
+    Game_Screen.prototype.getSsSprites = function () {
+        this.checkSsPlayListDefined();
         var result = [];
         for ( var key in this._ssPlayList.players) {
             if (this._ssPlayList.players[key] != null

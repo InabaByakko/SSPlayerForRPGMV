@@ -2,9 +2,9 @@
 
 ※ 暫定ドキュメントです。
 
-※ I need transrators for this document.
+\*\* [English document is HERE.](README_EN.md) \*\*
 
-## Description - このリポジトリについて
+## このリポジトリについて
 
 SpriteStudioで作成されたアニメーションを再生できるようにする、RPGツクールMV用プラグインです。
 
@@ -15,9 +15,7 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 
 このソフトウェアは、MITライセンスのもとで公開されています。詳しくは LICENSE.md をお読み下さい。
 
-This software is released under the MIT License, see LICENSE.md.
-
-## Usage - 使いかた
+## 使いかた
 
 ### プロジェクトへの組込み
 
@@ -27,10 +25,19 @@ This software is released under the MIT License, see LICENSE.md.
 
 ### アニメーションの表示
 
-1. コマンドプロンプトを起動し、次のコマンドでSpriteStudioで作成した.ssaxファイルをJSON形式に変換します。
-  ```
+1. 次のいずれかの方法を用いて、SpriteStudioで作成したアニメーションをJSON形式に変換します。
+  * SpriteStudio本体から直接JSONをエクスポートする
+    1. SpriteStudioの「ファイル」メニューから「プロジェクトの設定」を開き、「エクスポート」から「アニメーションデータのフォーマット」を「SSP for HTML5 (.json)」に変更し、OKボタンをクリック  
+    ![設定画面](http://www.webtech.co.jp/blog/wp-content/uploads/2013/10/ef2a98da7347f9f430162a6d50ef5299.png)
+    1. 「プロジェクト」メニューから「エクスポート」を選択し、エクスポートするアニメーションを選択  
+    
+  * SpriteStudio本体から一旦SSAXをエクスポートし、コンバーターを用いてJSONに変換する
+    1. SpriteStudioの「ファイル」メニューから「プロジェクトの設定」を開き、「エクスポート」から「アニメーションデータのフォーマット」を「SSAX」に変更し、OKボタンをクリック  
+    1. 「プロジェクト」メニューから「エクスポート」を選択し、エクスポートするアニメーションを選択 
+    1. コマンドプロンプトを起動し、次のコマンドでエクスポートしたssaxファイルをJSON形式に変換  
+    ```
   (SSPlayerForCCHを解凍したフォルダ)\Converter\bin\win\SsToHtml5.exe -i (変換するSSAXファイル) --json -o (出力するJSONファイル名) 
-  ```   
+    ```   
 1. 作成されたJSONファイルとPNGパーツ画像ファイルを、img/animations/ssas フォルダを作成しその中に格納します。（格納フォルダはプラグインパラメータで変更可能です。）
 1. 再生を開始するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
 ```JavaScript

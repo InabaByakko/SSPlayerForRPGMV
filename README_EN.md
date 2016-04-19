@@ -41,11 +41,14 @@ This software is released under the MIT License, see LICENSE.md.
     ```   
 1. Create folder "img/animations/ssas" to store the JSON file and PNG parts image file that you created in the previous step in it. (Folder path can be changed in the plug-in parameters.)
 1. To play your animation, use Event command "Plug-in command", and input value the following:  
-```JavaScript
+
+  ```JavaScript
 SsPlayer play (label name) (json file name) (x position) (y position) (repeat count; 0 means infinity)
 ```
+
 1. To stop and disappearing your animation, use Event command "Plug-in command", and input value the following:  
-```JavaScript
+
+  ```JavaScript
 SsPlayer stop (label name) 
 ```
 
@@ -56,15 +59,19 @@ If you want to show animations without using event command, you may use SsSprite
 1. Load your JSON animation data with any methods.
 1. Create "SsImageList" object and "SsAnimation" object from JSON data that you were load.  
  For example:
-```JavaScript
+ 
+  ```JavaScript
 var imageList = new SsImageList(jsonData.images, PluginManager.parameters('SSPlayerForRPGMV')['Animation File Path'], true);
 var animation = new SsAnimation(jsonData.animation, imageList);
 ```
+
 3. Create "SsSprite" object from these objects.  
-For example:  
-```JavaScript
+For example:
+  
+  ```JavaScript
 var sprite = new SsSprite(animation);
-```
+  ```
+  
 4. Call `addChild` method of Scene class object or any Sprite objects.
 
 After adding child, "update" method of "SsSprite" object will be called at every frames.

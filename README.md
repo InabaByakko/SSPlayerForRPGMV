@@ -34,17 +34,20 @@ https://github.com/SpriteStudio/SSPlayerForCCH
   * SpriteStudio本体から一旦SSAXをエクスポートし、コンバーターを用いてJSONに変換する
     1. SpriteStudioの「ファイル」メニューから「プロジェクトの設定」を開き、「エクスポート」から「アニメーションデータのフォーマット」を「SSAX」に変更し、OKボタンをクリック  
     1. 「プロジェクト」メニューから「エクスポート」を選択し、エクスポートするアニメーションを選択 
-    1. コマンドプロンプトを起動し、次のコマンドでエクスポートしたssaxファイルをJSON形式に変換  
+    1. コマンドプロンプトを起動し、次のコマンドでエクスポートしたssaxファイルをJSON形式に変換 
+     
     ```
   (SSPlayerForCCHを解凍したフォルダ)\Converter\bin\win\SsToHtml5.exe -i (変換するSSAXファイル) --json -o (出力するJSONファイル名) 
     ```   
 1. 作成されたJSONファイルとPNGパーツ画像ファイルを、img/animations/ssas フォルダを作成しその中に格納します。（格納フォルダはプラグインパラメータで変更可能です。）
 1. 再生を開始するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
-```JavaScript
+
+  ```JavaScript
 SsPlayer play (ラベル名) (jsonファイル名) (x座標) (y座標) (ループ回数 0:無限)
 ```
 1. 再生を停止するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
-```JavaScript
+
+  ```JavaScript
 SsPlayer stop (ラベル名) 
 ```
 
@@ -53,13 +56,15 @@ SsPlayer stop (ラベル名)
 SsSprite オブジェクトを生成して、イベントコマンド以外の部分から使用する方法です。
 
 1. 何らかの方法で、アニメーションJSONファイルを読み込む。
-1. jsonデータから、SsImageListとSsAnimationオブジェクトを生成する。  
-```JavaScript
+1. jsonデータから、SsImageListとSsAnimationオブジェクトを生成する。
+  
+  ```JavaScript
 var imageList = new SsImageList(jsonData.images, PluginManager.parameters('SSPlayerForRPGMV')['Animation File Path'], true);
 var animation = new SsAnimation(jsonData.animation, imageList);
 ```
 3. SsSpriteオブジェクトを生成する。
-```JavaScript
+
+  ```JavaScript
 var sprite = new SsSprite(animation);
 ```
 4. Sceneクラス直下やSpriteSetなどにaddChildする。

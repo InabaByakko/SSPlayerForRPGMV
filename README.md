@@ -68,6 +68,12 @@ updateメソッドは、addChildされると毎フレーム定期的に呼び出
 
 表示を消去したい場合は、addChildしたクラスで`removeChild`すればOKです。
 
+## バグを見つけた場合
+ 
+ご迷惑をお掛けしております。もし問題のある動作を発見された場合は、[GithubのIssue](https://github.com/InabaByakko/SSPlayerForRPGMV/issues)でトピックを立ててご報告いただくか、[Twitter@InabaByakko](https://twitter.com/InabaByakko)までご連絡をお願い致します。
+
+Githubのご利用に慣れていらっしゃる方は、直接のPull Requestも歓迎しております。
+
 ---
 
 * SpriteStudio, Web Technologyは、株式会社ウェブテクノロジの登録商標です。

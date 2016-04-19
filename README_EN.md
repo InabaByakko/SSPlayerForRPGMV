@@ -71,6 +71,14 @@ After adding child, "update" method of "SsSprite" object will be called at every
 
 If you want to disappear this animation, call `removeChild` of object that you were added animation object. 
 
+## When you found BUGs
+
+I'm sorry for causing you trouble. If you found some probrem, please report to make a topic at [Issue of Github](https://github.com/InabaByakko/SSPlayerForRPGMV/issues), or mention to [Twitter@InabaByakko](https://twitter.com/InabaByakko).
+
+If you're an expert of Github, I'm glad to be sent pull requests to fix issue.
+
+Thank you for your cooperation.
+
 ---
 
 * SpriteStudio, Web Technology is a Registered trademark of WebTechnology Corp.

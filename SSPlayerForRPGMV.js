@@ -281,8 +281,8 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
         this.loop = 0;
         this.page = null;
         this.animname = "";
-        this.scaleX = 1;
-        this.scaleY = 1;
+        this.scaleX = 100;
+        this.scaleY = 100;
         this.opacity = 255;
         this.blend = 0;
         this.speed = 1;
@@ -394,11 +394,11 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
                 break;
             case "拡大率X":
             case "SCALEX":
-                this.scale_x = Math.min(10, Math.max(-10, Number(param[1].match(/^[0-9]+/) !== null ? Number(param[1].match(/^[0-9]+/)[0]) : 100) / 100));
+                this.scaleX = Math.min(1000, Math.max(-1000, Number(param[1].match(/^-*[0-9]+/) !== null ? Number(param[1].match(/^-*[0-9]+/)[0]) : 100)));
                 break;
             case "拡大率Y":
             case "SCALEY":
-                this.scale_y = Math.min(10, Math.max(-10, Number(param[1].match(/^[0-9]+/) !== null ? Number(param[1].match(/^[0-9]+/)[0]) : 100) / 100));
+                this.scaleY = Math.min(1000, Math.max(-1000, Number(param[1].match(/^-*[0-9]+/) !== null ? Number(param[1].match(/^-*[0-9]+/)[0]) : 100)));
                 break;
             case "不透明度":
             case "OPACITY":
@@ -526,6 +526,8 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
             return;
         if (this._page === null)
             this._page = this.searchPageByName(this._animname);
+        if (!this.jsonData[this._page])
+            return;
         var imageList = new SsImageList(this.jsonData[this._page].images,
                 SSP4MV.animationDir, true);
         var animation = new SsAnimation(this.jsonData[this._page].animation,
@@ -591,8 +593,8 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
         if (this.sprite instanceof SsSprite) {
             this.sprite.x = this._x;
             this.sprite.y = this._y;
-            this.sprite.scale.x = this._scaleX;
-            this.sprite.scale.y = this._scaleY;
+            this.sprite.scale.x = this._scaleX / 100;
+            this.sprite.scale.y = this._scaleY / 100;
             this.sprite.opacity = this._opacity;
             this.sprite.blendMode = this._blendMode;
             this.sprite.setStep(this._step);

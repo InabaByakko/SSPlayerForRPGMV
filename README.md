@@ -25,41 +25,39 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 
 ### アニメーションの表示
 
-1. 次のいずれかの方法を用いて、SpriteStudioで作成したアニメーションをJSON形式に変換します。
-  * SpriteStudio本体から直接JSONをエクスポートする
-    1. SpriteStudioの「ファイル」メニューから「プロジェクトの設定」を開き、「エクスポート」から「アニメーションデータのフォーマット」を「SSP for HTML5 (.json)」に変更し、OKボタンをクリック  
-    ![設定画面](http://www.webtech.co.jp/blog/wp-content/uploads/2013/10/ef2a98da7347f9f430162a6d50ef5299.png)
-    1. 「プロジェクト」メニューから「エクスポート」を選択し、エクスポートするアニメーションを選択  
-    
-  * SpriteStudio本体から一旦SSAXをエクスポートし、コンバーターを用いてJSONに変換する
-    1. SpriteStudioの「ファイル」メニューから「プロジェクトの設定」を開き、「エクスポート」から「アニメーションデータのフォーマット」を「SSAX」に変更し、OKボタンをクリック  
-    1. 「プロジェクト」メニューから「エクスポート」を選択し、エクスポートするアニメーションを選択 
-    1. コマンドプロンプトを起動し、次のコマンドでエクスポートしたssaxファイルをJSON形式に変換 
-     
-    ```
-  (SSPlayerForCCHを解凍したフォルダ)\Converter\bin\win\SsToHtml5.exe -i (変換するSSAXファイル) --json -o (出力するJSONファイル名) 
-    ```   
+1. こちらのツールを用いて、SpriteStudioプロジェクトファイルをJSONファイル形式に変換します。  
+  https://github.com/SpriteStudio/Ss5ConverterToSSAJSON/raw/master/Tools/Ss5ConverterToSSAJSON.zip  
+  ツールの使用方法は、公式のドキュメントをご覧ください。  
+  https://github.com/SpriteStudio/Ss5ConverterToSSAJSON/wiki
 1. 作成されたJSONファイルとPNGパーツ画像ファイルを、img/animations/ssas フォルダを作成しその中に格納します。（格納フォルダはプラグインパラメータで変更可能です。）
-1. 再生を開始するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
-
-  ```JavaScript
-SsPlayer play (ラベル名) (jsonファイル名) (x座標) (y座標) (ループ回数 0:無限)
-```
-1. 再生を停止するには、イベントコマンド「プラグインコマンド」で、以下のように入力します。
-
-  ```JavaScript
-SsPlayer stop (ラベル名) 
-```
+1. プラグインコマンドを用いて、変換したアニメーションファイルを再生することが出来ます。詳しくはプラグインヘルプをご覧ください。  
+  (\[ツール\]->\[プラグイン管理\]からSsPlayerForRPGMVを選択し\[ヘルプ\]、またはプラグインコマンド入力ダイアログで右クリック->\[プラグインヘルプ\]->SsPlayerForRPGMVを選択)
 
 ### 他プラグインで使用する場合の詳細
 
 SsSprite オブジェクトを生成して、イベントコマンド以外の部分から使用する方法です。
 
-1. 何らかの方法で、アニメーションJSONファイルを読み込む。
+1. 何らかの方法で、アニメーションJSONファイルを読み込む。  
+
+  ```JavaScript
+// JSON読み込みコード例
+var xhr = new XMLHttpRequest();
+var url = SSP4MV.animationDir+"EXAMPLE.json";
+xhr.open('GET', url);
+xhr.overrideMimeType('application/json');
+xhr.onload = function (key) {
+    if (xhr.status < 400) {
+        // 上記コンバータを用いて変換したJSONファイルは複数のアニメーションデータがまとめられているため、再生したいアニメーション番号を指定
+        // 通常、アニメーションエディタの最も上のアニメーションが0番で、そこから下に1,2,...と続きます
+        this.jsonData = JSON.parse(xhr.responseText)[0];
+    }
+} .bind(this, key);
+xhr.send();
+```
 1. jsonデータから、SsImageListとSsAnimationオブジェクトを生成する。
   
   ```JavaScript
-var imageList = new SsImageList(jsonData.images, PluginManager.parameters('SSPlayerForRPGMV')['Animation File Path'], true);
+var imageList = new SsImageList(jsonData.images, SSP4MV.animationDir, true);
 var animation = new SsAnimation(jsonData.animation, imageList);
 ```
 3. SsSpriteオブジェクトを生成する。

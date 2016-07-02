@@ -26,37 +26,34 @@ This software is released under the MIT License, see LICENSE.md.
 
 ### Playing an animation
 
-1. Using one of the following methods, to convert the animation created in SpriteStudio in JSON format.
-  * To export JSON file directly from SpriteStudio editor:
-    1. Open the "Project Settings" from the "File" menu of SpriteStudio, go to "Export" tab, change the value of "Animation data format" to "SSP for HTML5 (.json)", then click the OK button.  
-    ![Export Setting(japanese)](http://www.webtech.co.jp/blog/wp-content/uploads/2013/10/ef2a98da7347f9f430162a6d50ef5299.png)
-    1. Open the "Export" from the "Project" menu, select your animations to export, then click the OK button.  
-    
-  * To export SSAX file from SpriteStudio editor, and convert to JSON file using external converter:
-    1. Open the "Project Settings" from the "File" menu of SpriteStudio, go to "Export" tab, change the value of "Animation data format" to "SSAX", then click the OK button.  
-    1. Open the "Export" from the "Project" menu, select your animations to export, then click the OK button.
-    1. Open the "Command prompt", and enter the following command line to convert SSAX files that you exported to JSON format.  
-    ```
-  path\to\SsPlayerForCCH\Converter\bin\win\SsToHtml5.exe -i (SSAX file path) --json -o (JSON file name) 
-    ```   
+1. Using following coverter program, to convert the animation created in SpriteStudio in JSON format.  
+  https://github.com/SpriteStudio/Ss5ConverterToSSAJSON/raw/master/Tools/Ss5ConverterToSSAJSON.zip  
+  Please check out this tool's official documents.
+  https://github.com/SpriteStudio/Ss5ConverterToSSAJSON/wiki
 1. Create folder "img/animations/ssas" to store the JSON file and PNG parts image file that you created in the previous step in it. (Folder path can be changed in the plug-in parameters.)
-1. To play your animation, use Event command "Plug-in command", and input value the following:  
-
-  ```JavaScript
-SsPlayer play (label name) (json file name) (x position) (y position) (repeat count; 0 means infinity)
-```
-
-1. To stop and disappearing your animation, use Event command "Plug-in command", and input value the following:  
-
-  ```JavaScript
-SsPlayer stop (label name) 
-```
+1. To play your animation, use Event command "Plugin command". For details, look at the plugin help.
 
 ### How to use your another plug-ins
 
 If you want to show animations without using event command, you may use SsSprite javascript object. 
 
-1. Load your JSON animation data with any methods.
+1. Load your JSON animation data with any methods.  
+
+  ```JavaScript
+// Example of loading JSON data
+var xhr = new XMLHttpRequest();
+var url = SSP4MV.animationDir+"EXAMPLE.json";
+xhr.open('GET', url);
+xhr.overrideMimeType('application/json');
+xhr.onload = function (key) {
+    if (xhr.status < 400) {
+        // JThe converted JSON file in the above tools, a number of animation data exists.
+        // Please specify the number of the animation you want to play.
+        this.jsonData = JSON.parse(xhr.responseText)[0];
+    }
+} .bind(this, key);
+xhr.send();
+```
 1. Create "SsImageList" object and "SsAnimation" object from JSON data that you were load.  
  For example:
  

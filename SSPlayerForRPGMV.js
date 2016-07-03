@@ -66,6 +66,8 @@
 *   #   　　 If omitted: Use Normal)
 *   #   - Speed: Playback speed of animation
 *   #       (Value range: 1 - 1000% / If omitted: Use 100%）
+*   #   - ShowInAllScenes : Option to make the animation that was created,
+*   #                       can be played on maps and battle both of scene
 *   #
 *   # Example）Play an animation data saved in file "animdata.json"
 *   #   at position (300, 400), and put the label named
@@ -94,6 +96,7 @@
 *   # attached to.
 *   
 * ** Release Notes **
+* v0.2.1 - Change animation that was created in each map and the battle so as not to play in a different scene by default (The same specifications as the picture)
 * v0.2.0 - Re-creation of plugin commands / Fixed issues - A probrem that the frame rate is slowed down seriously if a tint of animation changed
 * v0.1.10- Fixed issues - A problem that sometimes frame rate is slowed down seriously
 * v0.1.9 - Improved consumption efficiency of the memory / SsSprite properties -  blendColor, colorTone, blendMode - , will be applied
@@ -160,6 +163,8 @@
 *   #   - 合成方法: アニメーションの合成方法　
 *   #   　　（通常/加算/乗算/スクリーン から1つ選択、省略時は通常）
 *   #   - 再生速度: アニメーションの再生速度　（1～1000%、省略時100%）
+*   #   - 全シーンで表示 : 作成したアニメーションをマップとバトル両方の
+*   #                      シーンで再生できるようにする
 *   #
 *   # 例）animdata.json に保存されたアニメーションデータを、
 *   # 　「ラベル1」という名前のラベルを付けて、(300,400)の座標で
@@ -188,6 +193,7 @@
 *   
 * 
 * 更新履歴：
+* v0.2.1 - マップとバトルそれぞれで作成したアニメーションはデフォルトで異なるシーンで再生しないように変更（ピクチャと同じ仕様へ）
 * v0.2.0 - プラグインコマンドを刷新、アニメーションの色調変更を行うと一部環境で動作が遅くなる不具合を修正
 * v0.1.10- 一定の条件でフレームレートが大きく下がってしまう不具合を修正
 * v0.1.9 - メモリの使用効率を向上、SsSpriteオブジェクトに設定した blendColor, colorTone, blendMode プロパティが適用されるようにした
@@ -288,6 +294,7 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
         this.speed = 1;
         this.duration = 0;
         this.waitForCompletion = false;
+        this.showInAllScene = false;
     };
     
     // 現在の値からパラメータを生成
@@ -314,8 +321,10 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
             params.filename += ".json";
         params.label = args[1];
         args.slice(2, args.length).forEach(SSP4MV.processSsPlayerArgument, params);
-        $gameScreen.addToSsPlayList(params.label, new SsPlayer());
-        $gameScreen.getSsPlayerByLabel(params.label).loadAnimation(params);
+        var player = new SsPlayer();
+        $gameScreen.addToSsPlayList(params.label, player);
+        player.loadAnimation(params);
+        player.setScene(params);
     };
     
     //　SSアニメーション移動コマンド
@@ -361,6 +370,11 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
         if (val === "完了までウェイト" ||
             val.toUpperCase() === "WAITFORCOMPLETION") {
             this.waitForCompletion = true;
+            return;
+        }
+        if (val === "全シーンで表示" ||
+            val.toUpperCase() === "SHOWINALLSCENES") {
+            this.showInAllScene = true;
             return;
         }
         var param = val.split(':');
@@ -441,7 +455,14 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
         this.initBasic();
         this.initTarget();
     }
-    
+
+    // オブジェクトが作成されたシーン
+    SsPlayer.SCENE_MARK = {
+        all: 0,
+        map: 1,
+        battle: 2
+    };
+
     SsPlayer.prototype.initBasic = function() {
         this.jsonData = null;
         this.sprite = null;
@@ -455,6 +476,7 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
         this._blendMode = 0;
         this._loop = 0;
         this._step = 1;
+        this._scene = null;
     };
 
     SsPlayer.prototype.initTarget = function() {
@@ -602,6 +624,27 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
                 this.sprite.setLoop(this._loop);
         }
     };
+    
+    // 現在のシーンをセット
+    SsPlayer.prototype.setScene = function(params) {
+        if (params instanceof SSP4MV.SsPlayerArguments && params.showInAllScene) {
+            this._scene = SsPlayer.SCENE_MARK.all;
+        } else if ($gameParty.inBattle()) {
+            this._scene = SsPlayer.SCENE_MARK.battle;
+        } else {
+            this._scene = SsPlayer.SCENE_MARK.map;
+        }
+    };
+
+    // 特定のシーンでアニメーションを表示できるか
+    SsPlayer.prototype.isShowableInMap = function() {
+        return (this._scene === SsPlayer.SCENE_MARK.all ||
+            this._scene === SsPlayer.SCENE_MARK.map);
+    };
+    SsPlayer.prototype.isShowableInBattle = function() {
+        return (this._scene === SsPlayer.SCENE_MARK.all ||
+            this._scene === SsPlayer.SCENE_MARK.battle);
+    };
 
     //　Game_Screenの初期化時にSsPlayer配列の初期化
     var _Game_Screen_clear = Game_Screen.prototype.clear;
@@ -648,14 +691,17 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
         this.checkSsPlayListDefined();
         var result = [];
         for (var key in this._ssPlayList) {
-            if (this._ssPlayList[key] != null
-                    && this._ssPlayList[key].sprite != null) {
+            var player = this._ssPlayList[key];
+            if (!!player && player.sprite != null
+            && (($gameParty.inBattle() && player.isShowableInBattle())
+            || (!$gameParty.inBattle() && player.isShowableInMap()))) {
                 result.push(this._ssPlayList[key].sprite);
             }
         }
         return result;
     };
 
+    // SsPlayerのアップデート
     var ssGameScreenUpdate = Game_Screen.prototype.update;
     Game_Screen.prototype.update = function() {
         ssGameScreenUpdate.call(this);
@@ -666,7 +712,6 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
                 if (player instanceof SsPlayer)
                     player.update();
             }
-            
         };
     };
 
@@ -1323,7 +1368,7 @@ SsSprite.prototype.update = function () {
         this.removeChildren(0, this.children.length);
     }
 
-    if (this.inner.animation === null)
+    if (!this.inner.animation)
         return;
 
     if (this.isPlaying()) {

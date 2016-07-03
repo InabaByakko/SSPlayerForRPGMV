@@ -4,7 +4,7 @@
 
 \*\* [English document is HERE.](README_EN.md) \*\*
 
-## このリポジトリについて
+## このプラグインについて
 
 SpriteStudioで作成されたアニメーションを再生できるようにする、RPGツクールMV用プラグインです。
 
@@ -19,7 +19,7 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 
 ### プロジェクトへの組込み
 
-1. 右部の「Download ZIP」をクリックし、最新版のZIPアーカイブをダウンロードします。
+1. 右上部の「Clone or download」→「Download ZIP」をクリックし、最新版のZIPアーカイブをダウンロードします。
 1. ダウンロードしたZIPファイルを解凍して出てきた SSPlayerForRPGMV.js を、組み込みたいゲームプロジェクトのjs/pluginsフォルダへ入れます。
 1. ツクールエディタの「プラグイン管理」より「SSPlayerForRPGMV」を追加します。
 

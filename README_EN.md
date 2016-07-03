@@ -20,7 +20,7 @@ This software is released under the MIT License, see LICENSE.md.
 
 ### Incorporating in your project
 
-1. Press "Download ZIP" button at right of this page to download latest archive. 
+1. Press "Clone or download" -> "Download ZIP" button at upper right of this page to download latest archive. 
 1. Extract the ZIP file, the SSPlayerForRPGMV.js in it, you put to your game project of "js/plugins" folder.
 1. Install "SSPlayerForRPGMV" from "plug-in management" dialog of the editor.
 

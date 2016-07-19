@@ -1,0 +1,6 @@
+C:\Users\白兎\Source\Repos\SSPlayerForRPGMV\source\SSPlayerForRPGMV\bin\SSPlayerForRPGMV.dll.config
+C:\Users\白兎\Source\Repos\SSPlayerForRPGMV\source\SSPlayerForRPGMV\bin\SSPlayerForRPGMV.dll
+C:\Users\白兎\Source\Repos\SSPlayerForRPGMV\source\SSPlayerForRPGMV\bin\SSPlayerForRPGMV.pdb
+C:\Users\白兎\Source\Repos\SSPlayerForRPGMV\source\SSPlayerForRPGMV\obj\Debug\SSPlayerForRPGMV.csprojResolveAssemblyReference.cache
+C:\Users\白兎\Source\Repos\SSPlayerForRPGMV\source\SSPlayerForRPGMV\obj\Debug\SSPlayerForRPGMV.dll
+C:\Users\白兎\Source\Repos\SSPlayerForRPGMV\source\SSPlayerForRPGMV\obj\Debug\SSPlayerForRPGMV.pdb

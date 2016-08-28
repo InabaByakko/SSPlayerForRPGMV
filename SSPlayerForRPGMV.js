@@ -96,6 +96,7 @@
 *   # attached to.
 *   
 * ** Release Notes **
+* v0.2.2 - Fixed issues - A problem that some animations does not be applied vertex deformation attributes, and A problem that some animation with legacy command does not play.
 * v0.2.1 - Change animation that was created in each map and the battle so as not to play in a different scene by default (The same specifications as the picture)
 * v0.2.0 - Re-creation of plugin commands / Fixed issues - A probrem that the frame rate is slowed down seriously if a tint of animation changed
 * v0.1.10- Fixed issues - A problem that sometimes frame rate is slowed down seriously
@@ -193,6 +194,7 @@
 *   
 * 
 * 更新履歴：
+* v0.2.2 - 一部アニメーションで頂点変形が適用されない不具合の修正、レガシーコマンドで再生したアニメーションが表示されない不具合の修正
 * v0.2.1 - マップとバトルそれぞれで作成したアニメーションはデフォルトで異なるシーンで再生しないように変更（ピクチャと同じ仕様へ）
 * v0.2.0 - プラグインコマンドを刷新、アニメーションの色調変更を行うと一部環境で動作が遅くなる不具合を修正
 * v0.1.10- 一定の条件でフレームレートが大きく下がってしまう不具合を修正
@@ -227,6 +229,7 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
             var loop = Number(args[5] || 0);
             $gameScreen.getSsPlayerByLabel(args[1]).loadAnimation(args[2],
                     args[3], args[4], loop, 0);
+            $gameScreen.getSsPlayerByLabel(args[1]).setScene();
         }
         if (command === "SsPlayer" && args[0] === "stop") {
             $gameScreen.removeSsPlayerByLabel(args[1]);
@@ -494,12 +497,14 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
         if (arguments[0] instanceof SSP4MV.SsPlayerArguments) {
             params = arguments[0];
         } else {
+            // レガシーコマンド互換性維持
             params = new SSP4MV.SsPlayerArguments();
             params.filename = filename;
             params.x = x;
             params.y = y;
             params.loop = loop;
             params.page = page;
+            params.showInAllScene = true;
         }
         this._page = params.page;
         this._animname = params.animname;
@@ -936,7 +941,7 @@ SsPartData.prototype.getTranslates = function () {
 };
 
 SsPartData.prototype.hasTranslates = function () {
-    if (this._length > 24 &&
+    if (this._length >= 17 &&
         (this._data.slice(17, 24).some(function(i){return (i !== 0);})))
         return true;
     return false;

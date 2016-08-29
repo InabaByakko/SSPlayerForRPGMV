@@ -1,4 +1,4 @@
-//=============================================================================
+﻿//=============================================================================
 // SSPlayerForRPGMV.js
 //=============================================================================
 
@@ -96,6 +96,7 @@
 *   # attached to.
 *   
 * ** Release Notes **
+* v0.3.0 - RPGMV core script version 1.3.x has been supported.
 * v0.2.2 - Fixed issues - A problem that some animations does not be applied vertex deformation attributes, and A problem that some animation with legacy command does not play.
 * v0.2.1 - Change animation that was created in each map and the battle so as not to play in a different scene by default (The same specifications as the picture)
 * v0.2.0 - Re-creation of plugin commands / Fixed issues - A probrem that the frame rate is slowed down seriously if a tint of animation changed
@@ -194,6 +195,7 @@
 *   
 * 
 * 更新履歴：
+* v0.3.0 - MVコアスクリプト バージョン1.3.xに対応しました。
 * v0.2.2 - 一部アニメーションで頂点変形が適用されない不具合の修正、レガシーコマンドで再生したアニメーションが表示されない不具合の修正
 * v0.2.1 - マップとバトルそれぞれで作成したアニメーションはデフォルトで異なるシーンで再生しないように変更（ピクチャと同じ仕様へ）
 * v0.2.0 - プラグインコマンドを刷新、アニメーションの色調変更を行うと一部環境で動作が遅くなる不具合を修正
@@ -1032,7 +1034,11 @@ SsAnimation.prototype.getPartSprite = function (partNo, bitmap) {
 // Return a Strip object of the generated from partNo. If there is no return to create a new one.
 SsAnimation.prototype.getPartMesh = function (partNo, bitmap) {
     if (!this._partMeshs[partNo]) {
-        this._partMeshs[partNo] = new PIXI.Strip(new PIXI.Texture(bitmap.baseTexture));
+        var verts = new Float32Array([0, 0, 300, 0, 0, 300, 400, 400]);
+        var uvs = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
+        var triangles = new Uint16Array([0, 1, 2, 3, 2, 1]);
+        this._partMeshs[partNo] = new PIXI.mesh.Mesh(new PIXI.Texture(bitmap.baseTexture), verts, uvs, triangles,
+        PIXI.mesh.Mesh.DRAW_MODES.TRIANGLES);
     }else{
         this._partMeshs[partNo].texture.baseTexture = bitmap.baseTexture;
     }
@@ -1045,8 +1051,8 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
         partStates, scale, hue, blendColor, colorTone) {
     var sprites = [];
 
-    var blendOperations = new Array(PIXI.blendModes.NORMAL, PIXI.blendModes.MULTIPLY, PIXI.blendModes.ADD,
-            PIXI.blendModes.DIFFERENCE);
+    var blendOperations = new Array(PIXI.BLEND_MODES.NORMAL, PIXI.BLEND_MODES.MULTIPLY, PIXI.BLEND_MODES.ADD,
+            PIXI.BLEND_MODES.DIFFERENCE);
 
     var frameData = this.ssaData.ssa[frameNo];
     var frameLength = frameData.length;
@@ -1086,11 +1092,12 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
                 spr_part = this.getPartMesh(partNo, bitmap);
                 var texW = bitmap.width;
                 var texH = bitmap.height;
-                var verts = new Float32Array([(-ox + translate[0]),
-                (-oy + translate[1]), (sw - ox + translate[2]),
-                (-oy + translate[3]), (-ox + translate[4]),
-                (sh - oy + translate[5]), (sw - ox + translate[6]),
-                (sh - oy + translate[7])]);
+                var verts = new Float32Array([
+                    (-ox + translate[0]), (-oy + translate[1]),
+                    (sw - ox + translate[2]), (-oy + translate[3]), 
+                    (-ox + translate[4]), (sh - oy + translate[5]), 
+                    (sw - ox + translate[6]), (sh - oy + translate[7])
+                    ]);
                 var uvs = new Float32Array([
                 (sx + (fh == -1 ? sw : 0)) / texW, (sy + (fv == -1 ? sh : 0)) / texH,
                 (sx + (fh == -1 ? 0 : sw)) / texW, (sy + (fv == -1 ? sh : 0)) / texH,
@@ -1098,8 +1105,10 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
                 (sx + (fh == -1 ? 0 : sw)) / texW, (sy + (fv == -1 ? 0 : sh)) / texH
                 ]);
 
-                spr_part.vertices = verts;
-                spr_part.uvs = uvs;
+                for (var i=0; i<8; i++) {
+                    spr_part.vertices[i] = verts[i];
+                    spr_part.uvs[i] = uvs[i];
+                }
                 spr_part.dirty = true;
                 spr_part.scale = new PIXI.Point(scaleX, scaleY);
                 spr_part.alpha = alpha;

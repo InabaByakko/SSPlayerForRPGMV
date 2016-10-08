@@ -71,6 +71,14 @@ updateメソッドは、addChildされると毎フレーム定期的に呼び出
 
 表示を消去したい場合は、addChildしたクラスで`removeChild`すればOKです。
 
+## 応用プラグイン紹介
+
+本プラグインを応用した、システム拡張やグラフィック強化などの。プラグインを紹介します。
+
+- ChangeActorBattleAnimationToSsPlayer
+ - 戦闘中のアクターグラフィックを、SpriteStudio。アニメーションに置き換えます
+ - https://github.com/InabaByakko/ChangeActorBattleAnimationToSsPlayer
+
 ## バグを見つけた場合
  
 ご迷惑をお掛けしております。もし問題のある動作を発見された場合は、[GithubのIssue](https://github.com/InabaByakko/SSPlayerForRPGMV/issues)でトピックを立ててご報告いただくか、[Twitter@InabaByakko](https://twitter.com/InabaByakko)までご連絡をお願い致します。

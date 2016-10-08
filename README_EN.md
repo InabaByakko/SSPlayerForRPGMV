@@ -75,6 +75,14 @@ After adding child, "update" method of "SsSprite" object will be called at every
 
 If you want to disappear this animation, call `removeChild` of object that you were added animation object. 
 
+## Introducing Application plugins
+
+I will introduce some plugins application of this plugin, such as system extensions or graphic enhancement, and so on.
+
+- ChangeActorBattleAnimationToSsPlayer
+ - Replace the actor's battle animations made by OPTPiX SpriteStudio.
+ - https://github.com/InabaByakko/ChangeActorBattleAnimationToSsPlayer
+
 ## When you found BUGs
 
 I'm sorry for causing you trouble. If you found some probrem, please report to make a topic at [Issue of Github](https://github.com/InabaByakko/SSPlayerForRPGMV/issues), or mention to [Twitter@InabaByakko](https://twitter.com/InabaByakko).

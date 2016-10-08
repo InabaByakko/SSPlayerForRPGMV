@@ -73,10 +73,10 @@ updateメソッドは、addChildされると毎フレーム定期的に呼び出
 
 ## 応用プラグイン紹介
 
-本プラグインを応用した、システム拡張やグラフィック強化などの。プラグインを紹介します。
+本プラグインを応用した、システム拡張やグラフィック強化などのプラグインを紹介します。
 
 - ChangeActorBattleAnimationToSsPlayer
- - 戦闘中のアクターグラフィックを、SpriteStudio。アニメーションに置き換えます
+ - 戦闘中のアクターグラフィックを、SpriteStudioアニメーションに置き換えます
  - https://github.com/InabaByakko/ChangeActorBattleAnimationToSsPlayer
 
 ## バグを見つけた場合

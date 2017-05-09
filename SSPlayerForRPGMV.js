@@ -3,12 +3,21 @@
 //=============================================================================
 
 /*:
-* @plugindesc This plug-in can be able to play animations made by OPTPiX SpriteStudio.
+* @plugindesc [v0.4.0] This plug-in can be able to play animations made by OPTPiX SpriteStudio.
 * @author Web Technology Corp. / Inaba Byakko
 * 
 * @param Animation File Path
 * @desc A folder path to place animation data (json/png). Default value is "img/animations/ssas".
 * @default img/animations/ssas
+*
+* @param Limit Tint Color Range
+* @desc For mobile devices, it limits the range of colors that can be tinted in texture to each of 16 steps (ON or OFF).
+* @default OFF
+*
+* @param Use Filter To Tint Color
+* @desc It uses PIXI.js filter to change color tone of texture (ON or OFF). [!] The way of coloring might be changed.
+* @default OFF
+* 
 *
 * @help
 * ** INFORMATION **
@@ -96,6 +105,11 @@
 *   # attached to.
 *   
 * ** Release Notes **
+* v0.4.0 - RPGMV core script version 1.4.0 and community version 1.1b has been supported.
+*           An option which limits the range of colors that can be tinted has been added.
+*           An option which uses PIXI.js filter to change color tone of texture has been added.
+*           Method of calculating sprite's size has been changed to use values that defined in SSA JSON file.
+*           Fixed issues - A problem that sometimes game will be stop which plugin command "StopSsAnimation" has been executed.
 * v0.3.0 - RPGMV core script version 1.3.x has been supported.
 * v0.2.2 - Fixed issues - A problem that some animations does not be applied vertex deformation attributes, and A problem that some animation with legacy command does not play.
 * v0.2.1 - Change animation that was created in each map and the battle so as not to play in a different scene by default (The same specifications as the picture)
@@ -114,12 +128,21 @@
 */
 
 /*:ja
-* @plugindesc SpriteStudioで作成されたアニメーションを再生できるようにするプラグインです。
+* @plugindesc [v0.4.0] SpriteStudioで作成されたアニメーションを再生できるようにするプラグインです。
 * @author Web Technology Corp. / Inaba Byakko
 * 
-* @param Animation File Path
+* @param アニメーションフォルダ
 * @desc アニメーションデータ (json/png) が設置されたフォルダのパスです。デフォルトは "img/animations/ssas" です。
 * @default img/animations/ssas
+*
+* @param 色調変更範囲を制限する
+* @desc モバイル端末のメモリ不足対策のため、アニメーションの色調変更の範囲を、各色16段階までに制限します（ON/OFF) 。
+* @default OFF
+*
+* @param 色調変更をフィルタで行う
+* @desc アニメーションの色調変更をPIXI.jsのフィルタを用いて行います（ON/OFF) 。※従来手法から色味が変わる可能性があります
+* @default OFF
+*
 *
 * @help
 * ※注意
@@ -195,7 +218,12 @@
 *   
 * 
 * 更新履歴：
-* v0.3.0 - MVコアスクリプト バージョン1.3.xに対応しました。
+* v0.4.0 - MVコアスクリプト バージョン1.4.0、及びコミュニティ版バージョン1.1b に対応
+*　　　　　　　モバイル環境における色調変更の範囲を制限するオプションの追加
+*　　　　　　　色調変更にpixi.jsのフィルタを利用するオプションの追加
+*　　　　　　　スプライトサイズの計算にSSA JSONファイルのCanvasWidthを利用するよう変更
+*　　　　　　　タイミングによって、プラグインコマンド「SSアニメーション停止」を実行時にエラーとなる場合がある不具合の修正
+* v0.3.0 - MVコアスクリプト バージョン1.3.xに対応
 * v0.2.2 - 一部アニメーションで頂点変形が適用されない不具合の修正、レガシーコマンドで再生したアニメーションが表示されない不具合の修正
 * v0.2.1 - マップとバトルそれぞれで作成したアニメーションはデフォルトで異なるシーンで再生しないように変更（ピクチャと同じ仕様へ）
 * v0.2.0 - プラグインコマンドを刷新、アニメーションの色調変更を行うと一部環境で動作が遅くなる不具合を修正
@@ -215,8 +243,24 @@
 function SSP4MV() { }
 SSP4MV.parameters = PluginManager.parameters('SSPlayerForRPGMV');
 SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
+            || SSP4MV.parameters['アニメーションフォルダ']
             || "img/animations/ssas")
             + "/";
+SSP4MV.tintColorLimited = (function(){
+    if (SSP4MV.parameters['Limit Tint Color Range'] === 'ON' || 
+        SSP4MV.parameters['色調変更範囲を制限する'] === 'ON') 
+        return true;
+    return false;
+})();
+SSP4MV.tintWithFilter = (function(){
+    if (SSP4MV.parameters['Use Filter To Tint Color'] === 'ON' || 
+        SSP4MV.parameters['色調変更をフィルタで行う'] === 'ON') 
+        return true;
+    return false;
+})();
+SSP4MV.canUseFilter = (function(){
+    return Graphics.isWebGL() && !Utils.isMobileDevice() && SSP4MV.tintWithFilter;
+})();
 
 (function () {
 
@@ -244,21 +288,12 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
     //　全角英数字記号を半角へ変換
     //　http://jquery.nj-clucker.com/change-double-byte-to-half-width/
     SSP4MV.toHalfWidth = function(strVal) {
-        // 半角変換
         var halfVal = strVal.replace(/[！-～]/g,
             function(tmpStr) {
-                // 文字コードをシフト
                 return String.fromCharCode(tmpStr.charCodeAt(0) - 0xFEE0);
             }
         );
-
-        // 文字コードシフトで対応できない文字の変換
-        return halfVal.replace(/”/g, "\"")
-            .replace(/’/g, "'")
-            .replace(/‘/g, "`")
-            .replace(/￥/g, "\\")
-            .replace(/　/g, " ")
-            .replace(/〜/g, "~");
+        return halfVal.replace(/”/g, "\"").replace(/’/g, "'").replace(/‘/g, "`").replace(/￥/g, "\\").replace(/　/g, " ").replace(/〜/g, "~");
     };
     
     //　SSコマンドディスパッチャー
@@ -536,7 +571,8 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
                         imageList);
                 this.sprite = new SsSprite(animation);
                 this.sprite.setEndCallBack(function () {
-                    this.sprite.setAnimation(null);
+                    if (this.sprite && this.sprite.getAnimation() !== null)
+                        this.sprite.setAnimation(null);
                 } .bind(this));
             }
         } .bind(this, params);
@@ -595,6 +631,8 @@ SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
 
     //　SsSpriteオブジェクトの解放
     SsPlayer.prototype.dispose = function () {
+        if (this.sprite.getAnimation() !== null)
+            this.sprite.setAnimation(null);
         this.sprite = null;
     };
     
@@ -992,6 +1030,20 @@ SsAnimation.prototype.getPartsMap = function () {
     return this.partsMap;
 };
 
+// 基準枠の幅・高さ・原点情報があれば返す
+SsAnimation.prototype.getCanvasWidth = function () {
+    return (this.ssaData.CanvasWidth ? this.ssaData.CanvasWidth : 0);
+};
+SsAnimation.prototype.getCanvasHeight = function () {
+    return (this.ssaData.CanvasHeight ? this.ssaData.CanvasHeight : 0);
+};
+SsAnimation.prototype.getMarginWidth = function () {
+    return (this.ssaData.MarginWidth ? this.ssaData.MarginWidth : 0);
+};
+SsAnimation.prototype.getMarginHeight = function () {
+    return (this.ssaData.MarginHeight ? this.ssaData.MarginHeight : 0);
+};
+
 // 画像ファイル名からBitmapオブジェクトをロード
 // Return a Bitmap object from file path.
 SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone) {
@@ -999,6 +1051,13 @@ SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone
         blendColor = [0, 0, 0, 0];
     if (!Array.isArray(colorTone))
         colorTone = [0, 0, 0, 0];
+    // 色調変更範囲制限がONかつモバイル端末の場合は16段階に制限
+    if (SSP4MV.tintColorLimited && Utils.isMobileDevice()) {
+        for (var i=0; i < 4; i++) {
+            blendColor[i] = Math.round(blendColor[i]/16) * 16;
+            colorTone[i] = Math.round(colorTone[i]/16) * 16;
+        }
+    }
     // 画像をファイルパスから読み込んでキャッシュ
     if (!this._bitmaps[filepath + String(hue)]) {
         var filename = new String(filepath).substring(filepath.lastIndexOf('/') + 1).replace(new RegExp('.png$', 'g'), "");
@@ -1006,14 +1065,24 @@ SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone
         var bitmap = ImageManager.loadBitmap(dirname, filename, hue, true);
         this._bitmaps[filepath + String(hue)] = bitmap;
     }
-    // blendColor / colorTone が指定されたとき、着色処理したビットマップをキャッシュ
-    if (!this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')]) {
-        if (blendColor.some(function(i){return i != 0}) || colorTone.some(function(i){return i != 0})) {
-            var tinted = this.createTintedBitmap(this._bitmaps[filepath + String(hue)], colorTone, blendColor);
-            this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')] = tinted;
-        } else {
-            this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')] =
-                this._bitmaps[filepath + String(hue)];
+    // WebGLモードで色調変更にフィルタを用いる場合、色調変更はSprite側に任せるのでそのまま返す
+    if (SSP4MV.canUseFilter) {
+        return this._bitmaps[filepath + String(hue)]
+    } else {
+        // blendColor / colorTone が指定されたとき、着色処理したビットマップをキャッシュ
+        if (!this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')]) {
+            if (blendColor.some(function(i){return i != 0}) || colorTone.some(function(i){return i != 0})) {
+                var tinted = this.createTintedBitmap(this._bitmaps[filepath + String(hue)], colorTone, blendColor);
+                if (tinted !== null) {
+                    this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')] = tinted;
+                }else{
+                    blendColor = [0, 0, 0, 0];
+                    colorTone = [0, 0, 0, 0];
+                }
+            } else {
+                this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')] =
+                    this._bitmaps[filepath + String(hue)];
+            }
         }
     }
     return this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')];
@@ -1127,6 +1196,23 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
             spr_part.position = partData.getDestPosition();
             spr_part.rotation = -dang;
 
+            // WebGLモードで色調変更にフィルタを用いる場合、フィルタを適用
+            if (SSP4MV.canUseFilter) {
+                
+                if (! spr_part._toneFilter) {
+                    spr_part._toneFilter = new ToneFilter();
+                    spr_part.filters = [spr_part._toneFilter];
+                }
+                spr_part._toneFilter.reset();
+                spr_part._toneFilter.adjustTone(colorTone[0],colorTone[1],colorTone[2]);
+                spr_part._toneFilter.adjustSaturation(colorTone[3] * -1);
+                if (!spr_part._blendFilter || !(spr_part._blendFilter instanceof PIXI.mesh.Mesh)) {
+                    spr_part._blendFilter = new ColorBlendFilter();
+                    spr_part.filters = [spr_part._toneFilter, spr_part._blendFilter];
+                }
+                spr_part._blendFilter.setBlendColor(blendColor);
+            }
+
             sprites.push(spr_part);
 
         }
@@ -1142,58 +1228,96 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
 // 着色済みビットマップを生成
 // Create tinted Bitmap object.
 SsAnimation.prototype.createTintedBitmap = function (bitmap, tone, color) {
-    var x = 0, y = 0, w = bitmap.width, h = bitmap.height;
+    var x = 0, y = 0;
+    w = bitmap.width; 
+    h = bitmap.height;
     var newBitmap = new Bitmap(bitmap.width, bitmap.height);
     var context = newBitmap.context;
 
     context.globalCompositeOperation = 'copy';
-    context.drawImage(bitmap.canvas, x, y, w, h, 0, 0, w, h);
+    try {
+        context.drawImage(bitmap.canvas, x, y, w, h, 0, 0, w, h);
 
-    if (Graphics.canUseSaturationBlend()) {
-        var gray = Math.max(0, tone[3]);
-        context.globalCompositeOperation = 'saturation';
-        context.fillStyle = 'rgba(255,255,255,' + gray / 255 + ')';
-        context.fillRect(0, 0, w, h);
-    }
+        if (Graphics.canUseSaturationBlend()) {
+            var gray = Math.max(0, tone[3]);
+            context.globalCompositeOperation = 'saturation';
+            context.fillStyle = 'rgba(255,255,255,' + gray / 255 + ')';
+            context.fillRect(0, 0, w, h);
+        }
 
-    var r1 = Math.max(0, tone[0]);
-    var g1 = Math.max(0, tone[1]);
-    var b1 = Math.max(0, tone[2]);
-    context.globalCompositeOperation = 'lighter';
-    context.fillStyle = Utils.rgbToCssColor(r1, g1, b1);
-    context.fillRect(0, 0, w, h);
-
-    if (Graphics.canUseDifferenceBlend()) {
-        context.globalCompositeOperation = 'difference';
-        context.fillStyle = 'white';
-        context.fillRect(0, 0, w, h);
-
-        var r2 = Math.max(0, -tone[0]);
-        var g2 = Math.max(0, -tone[1]);
-        var b2 = Math.max(0, -tone[2]);
+        var r1 = Math.max(0, tone[0]);
+        var g1 = Math.max(0, tone[1]);
+        var b1 = Math.max(0, tone[2]);
         context.globalCompositeOperation = 'lighter';
-        context.fillStyle = Utils.rgbToCssColor(r2, g2, b2);
+        context.fillStyle = Utils.rgbToCssColor(r1, g1, b1);
         context.fillRect(0, 0, w, h);
 
-        context.globalCompositeOperation = 'difference';
-        context.fillStyle = 'white';
+        if (Graphics.canUseDifferenceBlend()) {
+            context.globalCompositeOperation = 'difference';
+            context.fillStyle = 'white';
+            context.fillRect(0, 0, w, h);
+
+            var r2 = Math.max(0, -tone[0]);
+            var g2 = Math.max(0, -tone[1]);
+            var b2 = Math.max(0, -tone[2]);
+            context.globalCompositeOperation = 'lighter';
+            context.fillStyle = Utils.rgbToCssColor(r2, g2, b2);
+            context.fillRect(0, 0, w, h);
+
+            context.globalCompositeOperation = 'difference';
+            context.fillStyle = 'white';
+            context.fillRect(0, 0, w, h);
+        }
+
+        var r3 = Math.max(0, color[0]);
+        var g3 = Math.max(0, color[1]);
+        var b3 = Math.max(0, color[2]);
+        var a3 = Math.max(0, color[3]);
+        context.globalCompositeOperation = 'source-atop';
+        context.fillStyle = Utils.rgbToCssColor(r3, g3, b3);
+        context.globalAlpha = a3 / 255;
         context.fillRect(0, 0, w, h);
+
+        context.globalCompositeOperation = 'destination-in';
+        context.globalAlpha = 1;
+        context.drawImage(bitmap.canvas, x, y, w, h, 0, 0, w, h);
+    } catch (e) {
+        console.log("An error occured while drawing tinted bitmap: "+e);
+        newBitmap = null;
     }
-
-    var r3 = Math.max(0, color[0]);
-    var g3 = Math.max(0, color[1]);
-    var b3 = Math.max(0, color[2]);
-    var a3 = Math.max(0, color[3]);
-    context.globalCompositeOperation = 'source-atop';
-    context.fillStyle = Utils.rgbToCssColor(r3, g3, b3);
-    context.globalAlpha = a3 / 255;
-    context.fillRect(0, 0, w, h);
-
-    context.globalCompositeOperation = 'destination-in';
-    context.globalAlpha = 1;
-    context.drawImage(bitmap.canvas, x, y, w, h, 0, 0, w, h);
 
     return newBitmap;
+};
+
+// //////////////////////////////////////////////////////////
+// ColorBlendFilter
+// //////////////////////////////////////////////////////////
+
+ColorBlendFilter = function () {
+    var fragmentSrc = "precision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nuniform float blendColor[4];\nvoid main(void) {\nvec4 color = texture2D(uSampler, vTextureCoord);\nfloat deltaR = (blendColor[0] - color.r ) * blendColor[3];\nfloat deltaG = (blendColor[1] - color.g ) * blendColor[3];\nfloat deltaB = (blendColor[2] - color.b ) * blendColor[3];\ncolor.r += deltaR;\ncolor.g += deltaG;\ncolor.b += deltaB;\ncolor.rgb *= color.a;\ngl_FragColor = color;\n}";
+
+    PIXI.Filter.call(this,
+        // vertex shader
+        null,
+        // fragment shader
+        fragmentSrc,
+        // custom uniforms
+    　　 {blendColor : { type: '4fv', value: new Float32Array([0, 0, 0, 0]) }}
+    );
+};
+
+ColorBlendFilter.prototype = Object.create(PIXI.Filter.prototype);
+ColorBlendFilter.prototype.constructor = PIXI.filters.MyFilter;
+
+ColorBlendFilter.prototype.setBlendColor = function (values) {
+    var r = Math.min(Math.max((values[0] || 0), -255), 255) / 255;
+    var g = Math.min(Math.max((values[1] || 0), -255), 255) / 255;
+    var b = Math.min(Math.max((values[2] || 0), -255), 255) / 255;
+    var a = Math.min(Math.max((values[3] || 0), 0), 255) / 255;
+    this.uniforms.blendColor[0] = r;
+    this.uniforms.blendColor[1] = g;
+    this.uniforms.blendColor[2] = b;
+    this.uniforms.blendColor[3] = a;
 };
 
 // //////////////////////////////////////////////////////////
@@ -1332,6 +1456,18 @@ SsSprite.prototype.getPartState = function (name) {
     return this.inner.partStates[partNo];
 };
 
+// 幅、高さを取得
+SsSprite.prototype.getWidth = function() {
+    if (!this.inner.animation) return 0;    
+    return (this.inner.animation.getCanvasWidth() ? this.inner.animation.getCanvasWidth() : this.frameWidth())
+};
+
+SsSprite.prototype.getHeight = function() {
+    if (!this.inner.animation) return 0;    
+    return (this.inner.animation.getCanvasHeight() ? this.inner.animation.getCanvasHeight() : this.frameHeight())
+};
+
+
 // 幅、高さを取得（現フレームのおおよその値）
 // Get width and height (inaccuracy value) of this frame.
 SsSprite.prototype.frameWidth = function () {
@@ -1373,6 +1509,13 @@ SsSprite.prototype.isPlaying = function () {
         return true;
     }
     return false;
+};
+
+SsSprite.prototype._needsTint = function() {
+    if (SSP4MV.canUseFilter) {
+        return false;
+    }
+    return Sprite.prototype._needsTint.call(this);
 };
 
 // 描画実行
@@ -1453,8 +1596,13 @@ SsSprite.prototype.update = function () {
             this.flipV, this.inner.partStates, this.scale, this.inner.hue,
             this.getBlendColor(), this.getColorTone()).forEach(
                 function(val, index, ar) {
-                    if (this.blendMode != 0)
+                    if (this.blendMode != 0) {
                         val.blendMode = this.blendMode;
+                        if (val._toneFilter instanceof ToneFilter)
+                            val._toneFilter.blendMode = this.blendMode;
+                        if (val._blendFilter instanceof ColorBlendFilter)
+                            val._blendFilter.blendMode = this.blendMode;
+                    }
                     this.addChild(val);
                 }, this);
     }

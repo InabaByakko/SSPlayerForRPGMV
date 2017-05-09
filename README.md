@@ -15,6 +15,12 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 
 このソフトウェアは、MITライセンスのもとで公開されています。詳しくは LICENSE.md をお読み下さい。
 
+### 動作確認済み環境
+
+- RPGツクールMV コアスクリプト バージョン 1.4.0
+- RPGツクールMV アツマール版(コミュニティ版) コアスクリプト バージョン 1.1b
+- Ss5ConverterToSSAJSON バージョン 1.0.3
+
 ## 使いかた
 
 ### プロジェクトへの組込み

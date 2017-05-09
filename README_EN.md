@@ -16,6 +16,12 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 
 This software is released under the MIT License, see LICENSE.md.
 
+### Operation confirmed environment
+
+- RPG Maker MV CoreScript Ver. 1.4.0
+- RPG Maker MV CoreScript Community Edition Ver. 1.1b
+- Ss5ConverterToSSAJSON Ver. 1.0.3
+
 ## Usage
 
 ### Incorporating in your project

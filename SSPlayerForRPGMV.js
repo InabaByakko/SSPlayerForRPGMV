@@ -3,7 +3,7 @@
 //=============================================================================
 
 /*:
-* @plugindesc [v0.4.0] This plug-in can be able to play animations made by OPTPiX SpriteStudio.
+* @plugindesc [v0.4.1] This plug-in can be able to play animations made by OPTPiX SpriteStudio.
 * @author Web Technology Corp. / Inaba Byakko
 * 
 * @param Animation File Path
@@ -105,11 +105,14 @@
 *   # attached to.
 *   
 * ** Release Notes **
-* v0.4.0 - RPGMV core script version 1.4.0 and community version 1.1b has been supported.
-*           An option which limits the range of colors that can be tinted has been added.
-*           An option which uses PIXI.js filter to change color tone of texture has been added.
-*           Method of calculating sprite's size has been changed to use values that defined in SSA JSON file.
-*           Fixed issues - A problem that sometimes game will be stop which plugin command "StopSsAnimation" has been executed.
+* v0.4.1 - RPGMV core script version 1.5.x has been supported.
+*            Fixed issues - A problem that the game will crash if execute "StopSsAnimation" plugin command before animation not finish loading.
+*            Fixed issues - A problem that the game will slow down if pixi.js filter is used for tinting sprite. 
+*            Fixed issues - A problem that sometime the texture of animation cell that uses vertex transform does not draw. 
+*            Fixed issues - A problem that changing texture of animation cell does not applied. 
+* v0.4.0 - RPGMV core script version 1.4.x and community edition version 1.1b has been supported.
+*            Add Plugin Parameter - Tinting with pixi.js filter
+*            Modified - Calculating Sprite width and height will use JSON file parameter: CanvasWidth / CanvasHeight
 * v0.3.0 - RPGMV core script version 1.3.x has been supported.
 * v0.2.2 - Fixed issues - A problem that some animations does not be applied vertex deformation attributes, and A problem that some animation with legacy command does not play.
 * v0.2.1 - Change animation that was created in each map and the battle so as not to play in a different scene by default (The same specifications as the picture)
@@ -120,7 +123,7 @@
 * v0.1.7 - Modified behavior when animation is stopped
 * v0.1.6 - Fixed issues - A problem that animation will be glitch when has vertically fliped parts
 * v0.1.5 - Fixed issues - A problem that parts' individual scale attributes aren't applied
-* v0.1.4 - Mpdified plugin command - It can appoint the number of times to repeat animation
+* v0.1.4 - Modified plugin command - It can appoint the number of times to repeat animation
 * v0.1.3 - Fixed issues - A problem when SsSprite had Scale property
 * v0.1.2 - Modified internal process of Plugin commands
 * v0.1.1 - Added Plugin commands
@@ -128,7 +131,7 @@
 */
 
 /*:ja
-* @plugindesc [v0.4.0] SpriteStudioで作成されたアニメーションを再生できるようにするプラグインです。
+* @plugindesc [v0.4.1] SpriteStudioで作成されたアニメーションを再生できるようにするプラグインです。
 * @author Web Technology Corp. / Inaba Byakko
 * 
 * @param アニメーションフォルダ
@@ -218,6 +221,11 @@
 *   
 * 
 * 更新履歴：
+* v0.4.1 - MVコアスクリプト バージョン1.5.xに対応
+*            ロードが完了しないうちに「SSアニメーションの停止」プラグインコマンドを実行するとエラーになる不具合の修正
+*            pixi.jsフィルタを用いた色調変更に時間がかかる不具合の修正
+*            頂点変形を使用したセルのテクスチャが抜けることがある不具合の修正
+*            モーションの途中でセルマップのビットマップを変更した場合に反映されない不具合の修正
 * v0.4.0 - MVコアスクリプト バージョン1.4.0、及びコミュニティ版バージョン1.1b に対応
 *　　　　　　　モバイル環境における色調変更の範囲を制限するオプションの追加
 *　　　　　　　色調変更にpixi.jsのフィルタを利用するオプションの追加
@@ -258,9 +266,11 @@ SSP4MV.tintWithFilter = (function(){
         return true;
     return false;
 })();
-SSP4MV.canUseFilter = (function(){
-    return Graphics.isWebGL() && !Utils.isMobileDevice() && SSP4MV.tintWithFilter;
-})();
+SSP4MV.canUseFilter = function() {
+    if (this._canUseFilter === undefined)
+        this._canUseFilter = Graphics.isWebGL() && !Utils.isMobileDevice() && SSP4MV.tintWithFilter;
+    return this._canUseFilter;
+};
 
 (function () {
 
@@ -631,7 +641,7 @@ SSP4MV.canUseFilter = (function(){
 
     //　SsSpriteオブジェクトの解放
     SsPlayer.prototype.dispose = function () {
-        if (this.sprite.getAnimation() !== null)
+        if (this.sprite && this.sprite.getAnimation() !== null)
             this.sprite.setAnimation(null);
         this.sprite = null;
     };
@@ -1047,17 +1057,22 @@ SsAnimation.prototype.getMarginHeight = function () {
 // 画像ファイル名からBitmapオブジェクトをロード
 // Return a Bitmap object from file path.
 SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone) {
+    // 判定が重いのでキャッシュ
+    if (this._isMobileDevice === undefined)
+        this._isMobileDevice = Utils.isMobileDevice();
+    
     if (!Array.isArray(blendColor))
         blendColor = [0, 0, 0, 0];
     if (!Array.isArray(colorTone))
         colorTone = [0, 0, 0, 0];
     // 色調変更範囲制限がONかつモバイル端末の場合は16段階に制限
-    if (SSP4MV.tintColorLimited && Utils.isMobileDevice()) {
+    if (SSP4MV.tintColorLimited && this._isMobileDevice) {
         for (var i=0; i < 4; i++) {
             blendColor[i] = Math.round(blendColor[i]/16) * 16;
             colorTone[i] = Math.round(colorTone[i]/16) * 16;
         }
     }
+
     // 画像をファイルパスから読み込んでキャッシュ
     if (!this._bitmaps[filepath + String(hue)]) {
         var filename = new String(filepath).substring(filepath.lastIndexOf('/') + 1).replace(new RegExp('.png$', 'g'), "");
@@ -1065,8 +1080,9 @@ SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone
         var bitmap = ImageManager.loadBitmap(dirname, filename, hue, true);
         this._bitmaps[filepath + String(hue)] = bitmap;
     }
+
     // WebGLモードで色調変更にフィルタを用いる場合、色調変更はSprite側に任せるのでそのまま返す
-    if (SSP4MV.canUseFilter) {
+    if (!this._bitmaps[filepath + String(hue)].isReady || SSP4MV.canUseFilter()) {
         return this._bitmaps[filepath + String(hue)]
     } else {
         // blendColor / colorTone が指定されたとき、着色処理したビットマップをキャッシュ
@@ -1103,15 +1119,28 @@ SsAnimation.prototype.getPartSprite = function (partNo, bitmap) {
 // Return a Strip object of the generated from partNo. If there is no return to create a new one.
 SsAnimation.prototype.getPartMesh = function (partNo, bitmap) {
     if (!this._partMeshs[partNo]) {
+        this._partMeshs[partNo] = this.createNewMesh(bitmap);
+    // bitmapの状態が変わったとき作り直す
+    } else if ((this._partMeshs[partNo].texture._bitmapUrl !== bitmap.url) ||
+                (!this._partMeshs[partNo].texture._bitmapReady && bitmap.isReady())) {
+        this._partMeshs[partNo].destroy();
+        this._partMeshs[partNo] = this.createNewMesh(bitmap);
+    }
+    return this._partMeshs[partNo];
+};
+
+// Meshオブジェクトの新規作成
+// Create a new Mesh object.
+SsAnimation.prototype.createNewMesh = function(bitmap) {
         var verts = new Float32Array([0, 0, 300, 0, 0, 300, 400, 400]);
         var uvs = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
         var triangles = new Uint16Array([0, 1, 2, 3, 2, 1]);
-        this._partMeshs[partNo] = new PIXI.mesh.Mesh(new PIXI.Texture(bitmap.baseTexture), verts, uvs, triangles,
+    var mesh = new PIXI.mesh.Mesh(new PIXI.Texture(bitmap.baseTexture), verts, uvs, triangles,
         PIXI.mesh.Mesh.DRAW_MODES.TRIANGLES);
-    }else{
-        this._partMeshs[partNo].texture.baseTexture = bitmap.baseTexture;
-    }
-    return this._partMeshs[partNo];
+    mesh.texture._bitmapUrl = bitmap.url;
+    mesh.texture._bitmapReady = bitmap.isReady();
+    
+    return mesh;
 };
 
 // 描画メソッド
@@ -1156,7 +1185,7 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
             var translate = partData.getTranslates();
 
             var spr_part;
-            // 頂点変形データがあるかないかでSpriteとStripを分ける
+            // 頂点変形データがあるかないかでSpriteとMeshを分ける
             if (partData.hasTranslates()) {
                 spr_part = this.getPartMesh(partNo, bitmap);
                 var texW = bitmap.width;
@@ -1195,23 +1224,6 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
             spr_part.blendMode = blendOperations[blend];
             spr_part.position = partData.getDestPosition();
             spr_part.rotation = -dang;
-
-            // WebGLモードで色調変更にフィルタを用いる場合、フィルタを適用
-            if (SSP4MV.canUseFilter) {
-                
-                if (! spr_part._toneFilter) {
-                    spr_part._toneFilter = new ToneFilter();
-                    spr_part.filters = [spr_part._toneFilter];
-                }
-                spr_part._toneFilter.reset();
-                spr_part._toneFilter.adjustTone(colorTone[0],colorTone[1],colorTone[2]);
-                spr_part._toneFilter.adjustSaturation(colorTone[3] * -1);
-                if (!spr_part._blendFilter || !(spr_part._blendFilter instanceof PIXI.mesh.Mesh)) {
-                    spr_part._blendFilter = new ColorBlendFilter();
-                    spr_part.filters = [spr_part._toneFilter, spr_part._blendFilter];
-                }
-                spr_part._blendFilter.setBlendColor(blendColor);
-            }
 
             sprites.push(spr_part);
 
@@ -1289,12 +1301,43 @@ SsAnimation.prototype.createTintedBitmap = function (bitmap, tone, color) {
     return newBitmap;
 };
 
+// ビットマップのロードが完了しているかを返す
+// Return whether bitmap loading is completed.
+SsAnimation.prototype.isReady = function () {
+    if (Object.keys(this._bitmaps).length === 0) return false;
+    var result = true;
+    for (var key in this._bitmaps){
+        if (this._bitmaps.hasOwnProperty(key) && this._bitmaps[key] instanceof Bitmap) {
+            result = result && this._bitmaps[key].isReady();
+        }
+    }
+    return result;
+}
+
 // //////////////////////////////////////////////////////////
 // ColorBlendFilter
 // //////////////////////////////////////////////////////////
 
 ColorBlendFilter = function () {
-    var fragmentSrc = "precision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nuniform float blendColor[4];\nvoid main(void) {\nvec4 color = texture2D(uSampler, vTextureCoord);\nfloat deltaR = (blendColor[0] - color.r ) * blendColor[3];\nfloat deltaG = (blendColor[1] - color.g ) * blendColor[3];\nfloat deltaB = (blendColor[2] - color.b ) * blendColor[3];\ncolor.r += deltaR;\ncolor.g += deltaG;\ncolor.b += deltaB;\ncolor.rgb *= color.a;\ngl_FragColor = color;\n}";
+    var fragmentSrc = `
+precision mediump float;
+varying vec2 vTextureCoord;
+uniform sampler2D uSampler;
+uniform float blendColor[4];
+void main(void) {
+    vec4 color = texture2D(uSampler, vTextureCoord);
+    if (color.a > 0.0) {
+        float deltaR = (blendColor[0] - color.r ) * blendColor[3];
+        float deltaG = (blendColor[1] - color.g ) * blendColor[3];
+        float deltaB = (blendColor[2] - color.b ) * blendColor[3];
+        color.r += deltaR;
+        color.g += deltaG;
+        color.b += deltaB;
+        color.rgb *= color.a;
+    }
+    gl_FragColor = color;
+}
+`;
 
     PIXI.Filter.call(this,
         // vertex shader
@@ -1512,7 +1555,7 @@ SsSprite.prototype.isPlaying = function () {
 };
 
 SsSprite.prototype._needsTint = function() {
-    if (SSP4MV.canUseFilter) {
+    if (SSP4MV.canUseFilter()) {
         return false;
     }
     return Sprite.prototype._needsTint.call(this);
@@ -1605,5 +1648,22 @@ SsSprite.prototype.update = function () {
                     }
                     this.addChild(val);
                 }, this);
+
+        // WebGLモードで色調変更にフィルタを用いる場合、フィルタを適用
+        if (SSP4MV.canUseFilter()) {
+            if (! this._toneFilter) {
+                this._toneFilter = new ToneFilter();
+                this.filters = [this._toneFilter];
+            }
+            var colorTone = this.getColorTone();
+            this._toneFilter.reset();
+            this._toneFilter.adjustTone(colorTone[0],colorTone[1],colorTone[2]);
+            this._toneFilter.adjustSaturation(colorTone[3] * -1);
+            if (!this._blendFilter) {
+                this._blendFilter = new ColorBlendFilter();
+                this.filters = [this._toneFilter, this._blendFilter];
+            }
+            this._blendFilter.setBlendColor(this.getBlendColor());
+        }
     }
 };

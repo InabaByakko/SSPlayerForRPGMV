@@ -18,7 +18,7 @@ This software is released under the MIT License, see LICENSE.md.
 
 ### Operation confirmed environment
 
-- RPG Maker MV CoreScript Ver. 1.4.0
+- RPG Maker MV CoreScript Ver. 1.5.1
 - RPG Maker MV CoreScript Community Edition Ver. 1.1b
 - Ss5ConverterToSSAJSON Ver. 1.0.3
 
@@ -86,8 +86,11 @@ If you want to disappear this animation, call `removeChild` of object that you w
 I will introduce some plugins application of this plugin, such as system extensions or graphic enhancement, and so on.
 
 - ChangeActorBattleAnimationToSsPlayer
- - Replace the actor's battle animations made by OPTPiX SpriteStudio.
- - https://github.com/InabaByakko/ChangeActorBattleAnimationToSsPlayer
+    - Replace the actor's battle animations made by OPTPiX SpriteStudio.
+    - https://github.com/InabaByakko/ChangeActorBattleAnimationToSsPlayer
+- ChangeCharacterToSS
+    - Replace the actors or events' character animation patterns to animation made by OPTPiX SpriteStudio.
+    - https://github.com/InabaByakko/ChangeCharacterToSS
 
 ## When you found BUGs
 

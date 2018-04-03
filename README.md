@@ -17,9 +17,9 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 
 ### 動作確認済み環境
 
-- RPGツクールMV コアスクリプト バージョン 1.4.0
+- RPGツクールMV コアスクリプト バージョン 1.5.1
 - RPGツクールMV アツマール版(コミュニティ版) コアスクリプト バージョン 1.1b
-- Ss5ConverterToSSAJSON バージョン 1.0.3
+- Ss5ConverterToSSAJSON バージョン 1.0.4
 
 ## 使いかた
 
@@ -82,8 +82,11 @@ updateメソッドは、addChildされると毎フレーム定期的に呼び出
 本プラグインを応用した、システム拡張やグラフィック強化などのプラグインを紹介します。
 
 - ChangeActorBattleAnimationToSsPlayer
- - 戦闘中のアクターグラフィックを、SpriteStudioアニメーションに置き換えます
- - https://github.com/InabaByakko/ChangeActorBattleAnimationToSsPlayer
+    - 戦闘中のアクターグラフィックを、SpriteStudioアニメーションに置き換えます
+    - https://github.com/InabaByakko/ChangeActorBattleAnimationToSsPlayer
+- ChangeCharacterToSS
+    - マップ画面上のアクター及びイベントグラフィックを、SpriteStudioアニメーションに置き換えます
+    - https://github.com/InabaByakko/ChangeCharacterToSS
 
 ## バグを見つけた場合
  

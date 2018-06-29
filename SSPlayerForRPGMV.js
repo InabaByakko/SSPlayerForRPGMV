@@ -596,6 +596,7 @@ SSP4MV.canUseFilter = function() {
                 var animation = new SsAnimation(this.jsonData[this._page].animation,
                         imageList);
                 this.sprite = new SsSprite(animation);
+                this.updateSprite();
                 this.sprite.setEndCallBack(function () {
                     if (this.sprite && this.sprite.getAnimation() !== null)
                         this.sprite.setAnimation(null);

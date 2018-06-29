@@ -375,6 +375,10 @@ SSP4MV.canUseFilter = function() {
         $gameScreen.addToSsPlayList(params.label, player);
         player.loadAnimation(params);
         player.setScene(params);
+        if (!isNaN(Number(params.label)) && Number(params.label) < $gameScreen.maxPictures()) {
+            $gameScreen.showPicture(Number(params.label), '__ssdummy__', 0,
+                player._x, player._y, player._scaleX, player._scaleY, player._opacity, player._blendMode);
+        }
     };
     
     //　SSアニメーション移動コマンド
@@ -493,6 +497,7 @@ SSP4MV.canUseFilter = function() {
         }
     };
 
+    // 再生完了までウェイト
     var _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
     Game_Interpreter.prototype.updateWaitMode = function() {
         var waiting = false;
@@ -596,7 +601,7 @@ SSP4MV.canUseFilter = function() {
                 var animation = new SsAnimation(this.jsonData[this._page].animation,
                         imageList);
                 this.sprite = new SsSprite(animation);
-                this.updateSprite();
+                this.updateSpriteStatus();
                 this.sprite.setEndCallBack(function () {
                     if (this.sprite && this.sprite.getAnimation() !== null)
                         this.sprite.setAnimation(null);
@@ -691,10 +696,13 @@ SSP4MV.canUseFilter = function() {
             this.sprite.scale.y = this._scaleY / 100;
             this.sprite.opacity = this._opacity;
             this.sprite.blendMode = this._blendMode;
-            this.sprite.setStep(this._step);
-            if (this.sprite.getLoop() !== this._loop)
-                this.sprite.setLoop(this._loop);
+            this.updateSpriteStatus();            
         }
+    };
+    SsPlayer.prototype.updateSpriteStatus = function() {
+        this.sprite.setStep(this._step);
+        if (this.sprite.getLoop() !== this._loop)
+            this.sprite.setLoop(this._loop);
     };
     
     // 現在のシーンをセット
@@ -748,8 +756,10 @@ SSP4MV.canUseFilter = function() {
     //　ラベル名を指定してSsPlayerの削除
     Game_Screen.prototype.removeSsPlayerByLabel = function (label) {
         this.checkSsPlayListDefined();
-        this._ssPlayList[label].dispose();
-        this._ssPlayList[label] = null;
+        if (this.getSsPlayerByLabel(label)) {
+            this._ssPlayList[label].dispose();
+            delete this._ssPlayList[label];
+        }
     };
 
     //　ラベル名からSsPlayerオブジェクトを取得
@@ -758,13 +768,13 @@ SSP4MV.canUseFilter = function() {
         return this._ssPlayList[label];
     };
 
-    //　作成済みのSsPlayerオブジェクトからSsSpriteオブジェクトを集めて返す
+    //　作成済みのSsPlayerオブジェクトからSsSpriteオブジェクトを集めて返す(非ピクチャレイヤー)
     Game_Screen.prototype.getSsSprites = function () {
         this.checkSsPlayListDefined();
         var result = [];
         for (var key in this._ssPlayList) {
             var player = this._ssPlayList[key];
-            if (!!player && player.sprite != null
+            if (!!player && player.sprite != null && (isNaN(Number(key)))
             && (($gameParty.inBattle() && player.isShowableInBattle())
             || (!$gameParty.inBattle() && player.isShowableInMap()))) {
                 result.push(this._ssPlayList[key].sprite);
@@ -773,18 +783,54 @@ SSP4MV.canUseFilter = function() {
         return result;
     };
 
+    var _Game_Screen_erasePicture = Game_Screen.prototype.erasePicture;
+    Game_Screen.prototype.erasePicture = function(pictureId) {
+        _Game_Screen_erasePicture.call(this);
+        $gameScreen.removeSsPlayerByLabel(String(pictureId));
+    };
+
     // SsPlayerのアップデート
     var ssGameScreenUpdate = Game_Screen.prototype.update;
     Game_Screen.prototype.update = function() {
         ssGameScreenUpdate.call(this);
         this.checkSsPlayListDefined();
-        for (var key in this._ssPlayList) {
-            if (this._ssPlayList.hasOwnProperty(key)) {
-                var player = this._ssPlayList[key];
-                if (player instanceof SsPlayer)
-                    player.update();
+        Object.keys(this._ssPlayList).forEach(function(key) {
+            // ピクチャ紐付きのアニメーションの座標は更新しない
+            if (!isNaN(Number(key))) return;
+            var player = this._ssPlayList[key];
+            if (player instanceof SsPlayer)
+                player.update();
+        },this);
+    };
+
+    //
+    var _Sprite_Picture_updateBitmap = Sprite_Picture.prototype.updateBitmap;
+    Sprite_Picture.prototype.updateBitmap = function() {
+        _Sprite_Picture_updateBitmap.call(this);
+        var player = $gameScreen.getSsPlayerByLabel(String(this._pictureId));
+        if (!player && !this.picture()) {
+            this.removeChildren();
+            return;
+        }
+        if (player && player.sprite) {
+            if (this.children.indexOf(player.sprite) < 0 && (
+                ($gameParty.inBattle() && player.isShowableInBattle()) ||
+                (!$gameParty.inBattle() && player.isShowableInMap())
+            )) {                
+                this.addChild(player.sprite);
             }
-        };
+        } else {
+            this.removeChildren();
+        }
+    };
+
+    var _Sprite_Picture_loadBitmap = Sprite_Picture.prototype.loadBitmap;
+    Sprite_Picture.prototype.loadBitmap = function(){
+        if (this._pictureName === '__ssdummy__') {
+            this.bitmap = ImageManager.loadEmptyBitmap();
+        } else {
+            _Sprite_Picture_loadBitmap.call(this);
+        }
     };
 
     //　SpriteSet作成時にSsSpriteオブジェクトを作成
@@ -810,13 +856,13 @@ SSP4MV.canUseFilter = function() {
     //　SsPlayerの状態を監視し、SsSpriteオブジェクトを更新
     Spriteset_Base.prototype.updateSsContainer = function () {
         var preparedSprites = $gameScreen.getSsSprites();
-        preparedSprites.forEach(function (sprite, index, array) {
+        preparedSprites.forEach(function (sprite, index) {
             if (this._ssContainer.children.indexOf(sprite) < 0) {
                 this._ssContainer.addChild(sprite);
             }
         }, this);
 
-        this._ssContainer.children.forEach(function (sprite, index, array) {
+        this._ssContainer.children.forEach(function (sprite, index) {
             if (preparedSprites.indexOf(sprite) < 0) {
                 this._ssContainer.removeChild(sprite);
             }

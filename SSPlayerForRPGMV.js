@@ -1171,10 +1171,8 @@ SsAnimation.prototype.createNewMesh = function(bitmap) {
 SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
         partStates, scale, hue, blendColor, colorTone) {
     var sprites = [];
-    var instanceSpriteNum = 0;
-    var instanceMeshNum = 0;
-    var effectSpriteNum = 0;
-    var effectMeshNum = 0;
+    var subSpriteNum = [0,0];
+    var subMeshNum = [0,0];
 
     var blendOperations = new Array(PIXI.BLEND_MODES.NORMAL, PIXI.BLEND_MODES.MULTIPLY, PIXI.BLEND_MODES.ADD,
             PIXI.BLEND_MODES.DIFFERENCE);
@@ -1214,12 +1212,9 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
             var spr_part;
             // 頂点変形データがあるかないかでSpriteとMeshを分ける
             if (partData.hasTranslates()) {
-                if (partNo === 0) {
-                    instanceMeshNum += 1;
-                    spr_part = this.getPartMesh(partNo, bitmap, instanceMeshNum);
-                } else if (partNo === 1) {
-                    effectMeshNum += 1;
-                    spr_part = this.getPartMesh(partNo, bitmap, effectMeshNum);
+                if (partNo <= 1) {
+                    subMeshNum[partNo] += 1;
+                    spr_part = this.getPartMesh(partNo, bitmap, subMeshNum[partNo]);
                 } else {
                     spr_part = this.getPartMesh(partNo, bitmap);
                 }
@@ -1246,12 +1241,9 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
                 spr_part.scale = new PIXI.Point(scaleX, scaleY);
                 spr_part.alpha = alpha;
             } else {
-                if (partNo === 0) {
-                    instanceSpriteNum += 1;
-                    spr_part = this.getPartSprite(partNo, bitmap, instanceSpriteNum);
-                } else if (partNo === 1) {
-                    effectSpriteNum += 1;
-                    spr_part = this.getPartSprite(partNo, bitmap, effectSpriteNum);
+                if (partNo <= 1) {
+                    subSpriteNum[partNo] += 1;
+                    spr_part = this.getPartSprite(partNo, bitmap, subSpriteNum[partNo]);
                 } else {
                     spr_part = this.getPartSprite(partNo, bitmap);
                 }

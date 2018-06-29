@@ -396,17 +396,10 @@ SSP4MV.canUseFilter = function() {
     //　SSアニメーション完了までウェイトコマンド
     SSP4MV.processWaitforCompletion = function (args) {
         var player = $gameScreen.getSsPlayerByLabel(args[0]);
-        if (!player || !player.sprite || player.sprite.getLoop() === 0)
+        if (!player)
             return;
-        var sprite = player.sprite;
-        var fps = sprite.getAnimation().getFPS();
-        var totalFrame = sprite.getAnimation().getFrameCount();
-        var frameno = sprite.getFrameNo();
-        var step = sprite.getStep();
-        var loop = sprite.getLoop();
-        var loopCount = sprite.getLoopCount();
-        var duration = ((totalFrame - frameno) + (totalFrame * (loop - (loopCount + 1)))) * (60/fps) / step;
-        this.wait(duration);
+        this.setWaitMode('ssAnim');
+        this._waitingSsPlayer = player;
     };
     
     //　SSアニメーション停止コマンド
@@ -498,6 +491,29 @@ SSP4MV.canUseFilter = function() {
             case "FRAME":
                 this.duration = Math.floor(Math.max(0, Number(param[1] || 0)));
         }
+    };
+
+    var _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
+    Game_Interpreter.prototype.updateWaitMode = function() {
+        var waiting = false;
+        if (this._waitMode === 'ssAnim') {
+            waiting = true;
+            var player = this._waitingSsPlayer;
+            if (player.sprite){
+                if (player.sprite.getLoop() === 0) {
+                    waiting = false;
+                } else {
+                    waiting = player.sprite.getAnimation() !== null;
+                }
+            }
+            if (!waiting) {
+                this._waitMode = '';
+                this._waitingSsPlayer = null;
+            }
+        } else {
+            waiting = _Game_Interpreter_updateWaitMode.call(this);
+        }
+        return waiting;
     };
 
     // SSアニメーション再生コマンドで使用するデータコンテナ

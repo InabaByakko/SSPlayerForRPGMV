@@ -1106,27 +1106,50 @@ SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone
 
 // パーツNoから生成済のSpriteオブジェクトを呼び出すか、ない場合は新規作成して返す
 // Return a Sprite object of the generated from partNo. If there is no return to create a new one.
-SsAnimation.prototype.getPartSprite = function (partNo, bitmap) {
-    if (!this._partSprites[partNo]) {
-        this._partSprites[partNo] = new Sprite(bitmap);
-    }else {
-        this._partSprites[partNo].bitmap = bitmap;
+SsAnimation.prototype.getPartSprite = function (partNo, bitmap, subPartNo) {
+    if (partNo <= 1 && typeof subPartNo === 'number') {
+        if (!Array.isArray(this._partSprites[partNo])) this._partSprites[partNo] = []; 
+        if (!this._partSprites[partNo][subPartNo]) {
+            this._partSprites[partNo][subPartNo] = new Sprite(bitmap);
+        }else {
+            this._partSprites[partNo][subPartNo].bitmap = bitmap;
+        }
+        return this._partSprites[partNo][subPartNo];
+    } else {
+        if (!this._partSprites[partNo]) {
+            this._partSprites[partNo] = new Sprite(bitmap);
+        }else {
+            this._partSprites[partNo].bitmap = bitmap;
+        }
+        return this._partSprites[partNo];
     }
-    return this._partSprites[partNo];
 };
 
 // パーツNoから生成済のStripオブジェクトを呼び出すか、ない場合は新規作成して返す
 // Return a Strip object of the generated from partNo. If there is no return to create a new one.
-SsAnimation.prototype.getPartMesh = function (partNo, bitmap) {
-    if (!this._partMeshs[partNo]) {
-        this._partMeshs[partNo] = this.createNewMesh(bitmap);
-    // bitmapの状態が変わったとき作り直す
-    } else if ((this._partMeshs[partNo].texture._bitmapUrl !== bitmap.url) ||
-                (!this._partMeshs[partNo].texture._bitmapReady && bitmap.isReady())) {
-        this._partMeshs[partNo].destroy();
-        this._partMeshs[partNo] = this.createNewMesh(bitmap);
+SsAnimation.prototype.getPartMesh = function (partNo, bitmap, subPartNo) {
+    if (partNo <= 1 && typeof subPartNo === 'number') {
+        if (!Array.isArray(this._partMeshs[partNo])) this._partMeshs[partNo] = []; 
+        if (!this._partMeshs[partNo][subPartNo]) {
+            this._partMeshs[partNo][subPartNo] = this.createNewMesh(bitmap);
+        // bitmapの状態が変わったとき作り直す
+        } else if ((this._partMeshs[partNo][subPartNo].texture._bitmapUrl !== bitmap.url) ||
+                    (!this._partMeshs[partNo][subPartNo].texture._bitmapReady && bitmap.isReady())) {
+            this._partMeshs[partNo][subPartNo].destroy();
+            this._partMeshs[partNo][subPartNo] = this.createNewMesh(bitmap);
+        }
+        return this._partMeshs[partNo][subPartNo];
+    } else {
+        if (!this._partMeshs[partNo]) {
+            this._partMeshs[partNo] = this.createNewMesh(bitmap);
+        // bitmapの状態が変わったとき作り直す
+        } else if ((this._partMeshs[partNo].texture._bitmapUrl !== bitmap.url) ||
+                    (!this._partMeshs[partNo].texture._bitmapReady && bitmap.isReady())) {
+            this._partMeshs[partNo].destroy();
+            this._partMeshs[partNo] = this.createNewMesh(bitmap);
+        }
+        return this._partMeshs[partNo];
     }
-    return this._partMeshs[partNo];
 };
 
 // Meshオブジェクトの新規作成
@@ -1148,6 +1171,10 @@ SsAnimation.prototype.createNewMesh = function(bitmap) {
 SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
         partStates, scale, hue, blendColor, colorTone) {
     var sprites = [];
+    var instanceSpriteNum = 0;
+    var instanceMeshNum = 0;
+    var effectSpriteNum = 0;
+    var effectMeshNum = 0;
 
     var blendOperations = new Array(PIXI.BLEND_MODES.NORMAL, PIXI.BLEND_MODES.MULTIPLY, PIXI.BLEND_MODES.ADD,
             PIXI.BLEND_MODES.DIFFERENCE);
@@ -1187,7 +1214,15 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
             var spr_part;
             // 頂点変形データがあるかないかでSpriteとMeshを分ける
             if (partData.hasTranslates()) {
-                spr_part = this.getPartMesh(partNo, bitmap);
+                if (partNo === 0) {
+                    instanceMeshNum += 1;
+                    spr_part = this.getPartMesh(partNo, bitmap, instanceMeshNum);
+                } else if (partNo === 1) {
+                    effectMeshNum += 1;
+                    spr_part = this.getPartMesh(partNo, bitmap, effectMeshNum);
+                } else {
+                    spr_part = this.getPartMesh(partNo, bitmap);
+                }
                 var texW = bitmap.width;
                 var texH = bitmap.height;
                 var verts = new Float32Array([
@@ -1211,7 +1246,15 @@ SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
                 spr_part.scale = new PIXI.Point(scaleX, scaleY);
                 spr_part.alpha = alpha;
             } else {
-                spr_part = this.getPartSprite(partNo, bitmap);
+                if (partNo === 0) {
+                    instanceSpriteNum += 1;
+                    spr_part = this.getPartSprite(partNo, bitmap, instanceSpriteNum);
+                } else if (partNo === 1) {
+                    effectSpriteNum += 1;
+                    spr_part = this.getPartSprite(partNo, bitmap, effectSpriteNum);
+                } else {
+                    spr_part = this.getPartSprite(partNo, bitmap);
+                }
                 spr_part.setFrame(sx, sy, sw, sh);
                 spr_part.anchor = new PIXI.Point(ox * 1.0 / sw, oy * 1.0 / sh);
                 if (fh == -1)

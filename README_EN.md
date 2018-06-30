@@ -1,7 +1,5 @@
 # SpriteStudioPlayerForRPGMV
 
-\* This is a preliminary document.
-
 \* I'm sorry in poor English. 
 I need transrators for this document.
 
@@ -21,6 +19,12 @@ This software is released under the MIT License, see LICENSE.md.
 - RPG Maker MV CoreScript Ver. 1.5.1
 - RPG Maker MV CoreScript Community Edition Ver. 1.1b
 - Ss5ConverterToSSAJSON Ver. 1.0.3
+
+# Demo
+
+https://inababyakko.github.io/SSPlayerForRPGMV/SampleProject/index.html
+
+Above demo project files are included into SampleProject folder.
 
 ## Usage
 

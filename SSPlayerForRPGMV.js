@@ -3,7 +3,7 @@
 //=============================================================================
 
 /*:
-* @plugindesc [v0.4.1] This plug-in can be able to play animations made by OPTPiX SpriteStudio.
+* @plugindesc [v0.5.0] This plug-in can be able to play animations made by OPTPiX SpriteStudio.
 * @author Web Technology Corp. / Inaba Byakko
 * 
 * @param Animation File Path
@@ -82,6 +82,12 @@
 *   #   at position (300, 400), and put the label named
 *   #   "label1". It is repeated 3 times.
 *   #  PlaySsAnimation animdata label1 x:300 y:400 repeat:3
+*   # 
+*   # * TIPS *
+*   # If you use label name with integer 1~99, you can display an animation
+*   # with same priolity as the corresponding picture number. And then you
+*   # can control animation by event commands such as "Move Picture" or
+*   # "Erase Picture".
 *   
 * MoveSsAnimation [label name] Frame:[frame interval] [[options]]
 *   # Changes the position, scale, translucency and image properties of a displayed animation.
@@ -105,6 +111,11 @@
 *   # attached to.
 *   
 * ** Release Notes **
+* v0.5.0 - RPGMV core script version 1.6.x has been supported.
+*            New Feature - Playing animation with instance or effect feature has been supported
+*            New Feature - Playing animation with integer label can be treated same priolity as pictures
+*            Modified - Plugin command "WaitForCompleteSsAniamtion" will be waited until animation data loaded.
+*            Fixed issues - A problem that the game will crash if execute "StopSsAnimation" plugin command to non existent label.
 * v0.4.1 - RPGMV core script version 1.5.x has been supported.
 *            Fixed issues - A problem that the game will crash if execute "StopSsAnimation" plugin command before animation not finish loading.
 *            Fixed issues - A problem that the game will slow down if pixi.js filter is used for tinting sprite. 
@@ -131,7 +142,7 @@
 */
 
 /*:ja
-* @plugindesc [v0.4.1] SpriteStudioで作成されたアニメーションを再生できるようにするプラグインです。
+* @plugindesc [v0.5.0] SpriteStudioで作成されたアニメーションを再生できるようにするプラグインです。
 * @author Web Technology Corp. / Inaba Byakko
 * 
 * @param アニメーションフォルダ
@@ -198,6 +209,12 @@
 *   # 　「ラベル1」という名前のラベルを付けて、(300,400)の座標で
 *   # 　3回繰り返して再生
 *   #  SSアニメーション再生 animdata ラベル1 x:300 y:400 ループ:3
+*   #
+*   # ◇TIPS◇
+*   # ラベル名に1以上99以下（ピクチャ表示枚数拡張をしている場合はその数）の
+*   # 数値を指定することで、対応するピクチャ番号と同じ優先度でアニメーション
+*   # を表示できます。また、「ピクチャの移動」「ピクチャの消去」などのイベント
+*   # コマンドでアニメーションを操作可能になります。
 *
 * SSアニメーション移動 [ラベル名] フレーム:[フレーム数] [[オプション]]
 *   # ラベル名を指定して再生したアニメーションの設定を変更します。
@@ -221,6 +238,11 @@
 *   
 * 
 * 更新履歴：
+* v0.5.0 - MVコアスクリプト バージョン1.6.xに対応
+*            インスタンス・エフェクト機能を使用したアニメーションの表示に対応
+*            ラベル名に数値を使用することでピクチャと同じ優先度で表示する機能の追加
+*            「SSアニメーション完了までウェイト」コマンドがロード時間を含めてウェイトするように変更
+*            存在しないラベルに対し「SSアニメーション停止」コマンドを実行すると強制終了する不具合を修正
 * v0.4.1 - MVコアスクリプト バージョン1.5.xに対応
 *            ロードが完了しないうちに「SSアニメーションの停止」プラグインコマンドを実行するとエラーになる不具合の修正
 *            pixi.jsフィルタを用いた色調変更に時間がかかる不具合の修正

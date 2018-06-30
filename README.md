@@ -1,7 +1,5 @@
 # SpriteStudioPlayerForRPGMV
 
-※ 暫定ドキュメントです。
-
 \*\* [English document is HERE.](README_EN.md) \*\*
 
 ## このプラグインについて
@@ -20,6 +18,12 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 - RPGツクールMV コアスクリプト バージョン 1.5.1
 - RPGツクールMV アツマール版(コミュニティ版) コアスクリプト バージョン 1.1b
 - Ss5ConverterToSSAJSON バージョン 1.0.4
+
+## デモ
+
+https://inababyakko.github.io/SSPlayerForRPGMV/SampleProject/index.html
+
+SampleProject フォルダに上記デモのプロジェクトデータが格納されています。
 
 ## 使いかた
 

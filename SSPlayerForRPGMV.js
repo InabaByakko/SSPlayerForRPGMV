@@ -360,6 +360,26 @@ SSP4MV.canUseFilter = function() {
         params.speed = player._step;
         return params;
     };
+    SSP4MV.makeParamsFromPicture = function(player, pictureId) {
+        var params = new SSP4MV.SsPlayerArguments();
+        var picture = $gameScreen.picture(pictureId);
+        params.x = picture.x();
+        params.y = picture.y();
+        params.scaleX = picture.scaleX();
+        params.scaleY = picture.scaleY();
+        params.opacity = picture.opacity();
+        params.blendMode = picture.blendMode();
+        params.loop = player._loop;
+        params.speed = player._step;
+        return params;
+    };
+
+    // ピクチャレイヤー上に描画するかどうか
+    SSP4MV.isPictureLayer = function (label) {
+        // ラベル名が整数かつピクチャIDの範囲内に収まっているか
+        return !isNaN(Number(label)) &&
+            Number(label) > 0 && Number(label) < $gameScreen.maxPictures();
+    };
 
     //　SSアニメーション再生コマンド
     SSP4MV.processSsPlay = function (args) {
@@ -375,7 +395,7 @@ SSP4MV.canUseFilter = function() {
         $gameScreen.addToSsPlayList(params.label, player);
         player.loadAnimation(params);
         player.setScene(params);
-        if (!isNaN(Number(params.label)) && Number(params.label) < $gameScreen.maxPictures()) {
+        if (SSP4MV.isPictureLayer(params.label)) {
             $gameScreen.showPicture(Number(params.label), '__ssdummy__', 0,
                 player._x, player._y, player._scaleX, player._scaleY, player._opacity, player._blendMode);
         }
@@ -386,13 +406,23 @@ SSP4MV.canUseFilter = function() {
         var player = $gameScreen.getSsPlayerByLabel(args[0]);
         if (!player)
             return;
-        var params = SSP4MV.makeParamsFromCurrent(player);
+        var params = (SSP4MV.isPictureLayer(args[0]) 
+            ? SSP4MV.makeParamsFromPicture(player, args[0])
+            : SSP4MV.makeParamsFromCurrent(player)
+        );
         params.label = args[0];
         args.slice(1, args.length).forEach(SSP4MV.processSsPlayerArgument, params);
         if (params.duration === 0)
             return;
         player.changeAnimationPage(params);
-        player.move(params);
+        if (SSP4MV.isPictureLayer(args[0])){
+            $gameScreen.picture(Number(args[0])).move(
+                0, params.x, params.y, params.scaleX, params.scaleY,
+                params.opacity, params.blendMode, params.duration
+            );
+        }else{
+            player.move(params);
+        }
         if (params.waitForCompletion)
             this.wait(params.duration);
     };
@@ -785,7 +815,7 @@ SSP4MV.canUseFilter = function() {
 
     var _Game_Screen_erasePicture = Game_Screen.prototype.erasePicture;
     Game_Screen.prototype.erasePicture = function(pictureId) {
-        _Game_Screen_erasePicture.call(this);
+        _Game_Screen_erasePicture.call(this, pictureId);
         $gameScreen.removeSsPlayerByLabel(String(pictureId));
     };
 

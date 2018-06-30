@@ -15,7 +15,7 @@ https://github.com/SpriteStudio/SSPlayerForCCH
 
 ### 動作確認済み環境
 
-- RPGツクールMV コアスクリプト バージョン 1.5.1
+- RPGツクールMV コアスクリプト バージョン 1.6.2
 - RPGツクールMV アツマール版(コミュニティ版) コアスクリプト バージョン 1.1b
 - Ss5ConverterToSSAJSON バージョン 1.0.4
 

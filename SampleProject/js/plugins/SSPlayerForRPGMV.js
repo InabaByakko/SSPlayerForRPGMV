@@ -1664,27 +1664,27 @@ SsAnimation.prototype.isReady = function () {
 // //////////////////////////////////////////////////////////
 
 ColorBlendFilter = function () {
-    var fragmentSrc = `
-precision mediump float;
-varying vec2 vTextureCoord;
-uniform sampler2D uSampler;
-uniform float blendColor[4];
-void main(void) {
-    vec4 color = texture2D(uSampler, vTextureCoord);
-    if (color.a > 0.0) {
-        float deltaR = (blendColor[0] - color.r ) * blendColor[3];
-        float deltaG = (blendColor[1] - color.g ) * blendColor[3];
-        float deltaB = (blendColor[2] - color.b ) * blendColor[3];
-        color.r += deltaR;
-        color.g += deltaG;
-        color.b += deltaB;
-        color.rgb *= color.a;
-    }
-    gl_FragColor = color;
-}
-`;
-
-    PIXI.Filter.call(this,
+    var fragmentSrc = [
+        'precision mediump float;',
+        'varying vec2 vTextureCoord;',
+        'uniform sampler2D uSampler;',
+        'uniform float blendColor[4];',
+        'void main(void) {',
+        '    vec4 color = texture2D(uSampler, vTextureCoord);',
+        '    if (color.a > 0.0) {',
+        '        float deltaR = (blendColor[0] - color.r ) * blendColor[3];',
+        '        float deltaG = (blendColor[1] - color.g ) * blendColor[3];',
+        '        float deltaB = (blendColor[2] - color.b ) * blendColor[3];',
+        '        color.r += deltaR;',
+        '        color.g += deltaG;',
+        '        color.b += deltaB;',
+        '        color.rgb *= color.a;',
+        '    }',
+        '    gl_FragColor = color;',
+        '}'
+    ].join('\n');
+    PIXI.Filter.call(
+        this,
         // vertex shader
         null,
         // fragment shader

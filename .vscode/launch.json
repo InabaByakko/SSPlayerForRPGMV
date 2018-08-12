@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceRoot}/SampleProject/index.html",
+            "runtimeArgs": [
+                "--allow-file-access-from-files",
+                "--remote-debugging-port=9222"
+                // "--user-data-dir=/tmp"
+            ]
+        }
+    ]
+}

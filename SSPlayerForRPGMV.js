@@ -270,69 +270,37 @@
 * v0.1.0 - 最初のリリース
 */
 
-// SSP4MV ユーティリティ
-
 function SSP4MV() { }
-
-// SSP4MV パラメータ
 SSP4MV.parameters = PluginManager.parameters('SSPlayerForRPGMV');
-
-// SSP4MV ディレクトリ
-SSP4MV.animationDir = (
-    String(
-        SSP4MV.parameters['Animation File Path'] ||
-        SSP4MV.parameters['アニメーションフォルダ'] ||
-        "img/animations/ssas"
-    ) + "/"
-);
-
-// 色調変更範囲
-SSP4MV.tintColorLimited = (
-    function() {
-        if (SSP4MV.parameters['Limit Tint Color Range'] === 'ON' || 
-            SSP4MV.parameters['色調変更範囲を制限する'] === 'ON'
-        ) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-)();
-
-// フィルタ色調変更フラグ
-SSP4MV.tintWithFilter = (
-    function() {
-        if (SSP4MV.parameters['Use Filter To Tint Color'] === 'ON' || 
-            SSP4MV.parameters['色調変更をフィルタで行う'] === 'ON'
-        ) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-)();
-
-// フィルタ使用可否
-SSP4MV.canUseFilter = (
-    function() {
-        if (this._canUseFilter === undefined) {
-            this._canUseFilter = (
-                Graphics.isWebGL() &&
-                !Utils.isMobileDevice() &&
-                SSP4MV.tintWithFilter
-            );
-        }
-        return this._canUseFilter;
-    }
-);
+SSP4MV.animationDir = String(SSP4MV.parameters['Animation File Path']
+            || SSP4MV.parameters['アニメーションフォルダ']
+            || "img/animations/ssas")
+            + "/";
+SSP4MV.tintColorLimited = (function(){
+    if (SSP4MV.parameters['Limit Tint Color Range'] === 'ON' || 
+        SSP4MV.parameters['色調変更範囲を制限する'] === 'ON') 
+        return true;
+    return false;
+})();
+SSP4MV.tintWithFilter = (function(){
+    if (SSP4MV.parameters['Use Filter To Tint Color'] === 'ON' || 
+        SSP4MV.parameters['色調変更をフィルタで行う'] === 'ON') 
+        return true;
+    return false;
+})();
+SSP4MV.canUseFilter = function() {
+    if (this._canUseFilter === undefined)
+        this._canUseFilter = Graphics.isWebGL() && !Utils.isMobileDevice() && SSP4MV.tintWithFilter;
+    return this._canUseFilter;
+};
 
 (function () {
 
     // プラグインコマンドの定義
-    var _Game_Interpreter_pluginCommand =
-        Game_Interpreter.prototype.pluginCommand;
+    var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function (command, args) {
         _Game_Interpreter_pluginCommand.call(this, command, args);
+
         // 旧バージョン互換性のため残す
         if (command === "SsPlayer" && args[0] === "play") {
             $gameScreen.addToSsPlayList(args[1], new SsPlayer());
@@ -344,15 +312,15 @@ SSP4MV.canUseFilter = (
         if (command === "SsPlayer" && args[0] === "stop") {
             $gameScreen.removeSsPlayerByLabel(args[1]);
         }
+        
         // 新しいプラグインコマンドを処理
         SSP4MV.processSsCommands.call(this, command, args);
     };
 
-    // 全角英数字記号を半角へ変換
-    // http://jquery.nj-clucker.com/change-double-byte-to-half-width/
+    //　全角英数字記号を半角へ変換
+    //　http://jquery.nj-clucker.com/change-double-byte-to-half-width/
     SSP4MV.toHalfWidth = function(strVal) {
-        var halfVal = strVal.replace(
-            /[！-～]/g,
+        var halfVal = strVal.replace(/[！-～]/g,
             function(tmpStr) {
                 return String.fromCharCode(tmpStr.charCodeAt(0) - 0xFEE0);
             }
@@ -360,7 +328,7 @@ SSP4MV.canUseFilter = (
         return halfVal.replace(/”/g, "\"").replace(/’/g, "'").replace(/‘/g, "`").replace(/￥/g, "\\").replace(/　/g, " ").replace(/〜/g, "~");
     };
     
-    // SSコマンドディスパッチャー
+    //　SSコマンドディスパッチャー
     SSP4MV.processSsCommands = function (command, args) {
         switch (SSP4MV.toHalfWidth(command).toUpperCase()) {
             case "SSアニメーション再生":
@@ -382,7 +350,7 @@ SSP4MV.canUseFilter = (
         }
     };
 
-    // プラグインコマンドパラメータオブジェクト
+    //　プラグインコマンドパラメータオブジェクト
     SSP4MV.SsPlayerArguments = function() {
         this.label = "";
         this.filename = "";
@@ -414,8 +382,6 @@ SSP4MV.canUseFilter = (
         params.speed = player._step;
         return params;
     };
-
-    // ピクチャの値からパラメータを生成
     SSP4MV.makeParamsFromPicture = function(player, pictureId) {
         var params = new SSP4MV.SsPlayerArguments();
         var picture = $gameScreen.picture(pictureId);
@@ -433,94 +399,66 @@ SSP4MV.canUseFilter = (
     // ピクチャレイヤー上に描画するかどうか
     SSP4MV.isPictureLayer = function (label) {
         // ラベル名が整数かつピクチャIDの範囲内に収まっているか
-        return (
-            !isNaN(Number(label)) &&
-            Number(label) > 0 &&
-            Number(label) < $gameScreen.maxPictures()
-        );
+        return !isNaN(Number(label)) &&
+            Number(label) > 0 && Number(label) < $gameScreen.maxPictures();
     };
 
-    // SSアニメーション再生コマンド
+    //　SSアニメーション再生コマンド
     SSP4MV.processSsPlay = function (args) {
         var params = new SSP4MV.SsPlayerArguments();
-        if (!args[0] || !args[1]) {
+        if (!args[0] || !args[1])
             return;
-        }
         params.filename = args[0];
-        if (!/\.json$/i.test(params.filename)) {
+        if (!/\.json$/i.test(params.filename))
             params.filename += ".json";
-        }
         params.label = args[1];
         args.slice(2, args.length).forEach(SSP4MV.processSsPlayerArgument, params);
-        
         var player = new SsPlayer();
         $gameScreen.addToSsPlayList(params.label, player);
         player.loadAnimation(params);
         player.setScene(params);
-
         if (SSP4MV.isPictureLayer(params.label)) {
-            $gameScreen.showPicture(
-                Number(params.label),
-                '__ssdummy__',
-                0,
-                player._x,
-                player._y,
-                player._scaleX,
-                player._scaleY,
-                player._opacity,
-                player._blendMode
-            );
+            $gameScreen.showPicture(Number(params.label), '__ssdummy__', 0,
+                player._x, player._y, player._scaleX, player._scaleY, player._opacity, player._blendMode);
         }
     };
     
-    // SSアニメーション移動コマンド
+    //　SSアニメーション移動コマンド
     SSP4MV.processSsMove = function (args) {
         var player = $gameScreen.getSsPlayerByLabel(args[0]);
-        if (!player) {
+        if (!player)
             return;
-        }
-        var params = (SSP4MV.isPictureLayer(args[0]) ?
-            SSP4MV.makeParamsFromPicture(player, args[0]) :
-            SSP4MV.makeParamsFromCurrent(player)
+        var params = (SSP4MV.isPictureLayer(args[0]) 
+            ? SSP4MV.makeParamsFromPicture(player, args[0])
+            : SSP4MV.makeParamsFromCurrent(player)
         );
         params.label = args[0];
         args.slice(1, args.length).forEach(SSP4MV.processSsPlayerArgument, params);
-
-        if (params.duration === 0) {
+        if (params.duration === 0)
             return;
-        }
-
         player.changeAnimationPage(params);
-        if (SSP4MV.isPictureLayer(args[0])) {
+        if (SSP4MV.isPictureLayer(args[0])){
             $gameScreen.picture(Number(args[0])).move(
-                0,
-                params.x,
-                params.y,
-                params.scaleX,
-                params.scaleY,
-                params.opacity,
-                params.blendMode,
-                params.duration
+                0, params.x, params.y, params.scaleX, params.scaleY,
+                params.opacity, params.blendMode, params.duration
             );
-        } else {
+        }else{
             player.move(params);
         }
-        if (params.waitForCompletion) {
+        if (params.waitForCompletion)
             this.wait(params.duration);
-        }
     };
     
-    // SSアニメーション完了までウェイトコマンド
+    //　SSアニメーション完了までウェイトコマンド
     SSP4MV.processWaitforCompletion = function (args) {
         var player = $gameScreen.getSsPlayerByLabel(args[0]);
-        if (!player) {
+        if (!player)
             return;
-        }
         this.setWaitMode('ssAnim');
         this._waitingSsPlayer = player;
     };
     
-    // SSアニメーション停止コマンド
+    //　SSアニメーション停止コマンド
     SSP4MV.processSsStop = function (args) {
         $gameScreen.removeSsPlayerByLabel(args[0]);
     };
@@ -610,10 +548,9 @@ SSP4MV.canUseFilter = (
                 this.duration = Math.floor(Math.max(0, Number(param[1] || 0)));
         }
     };
-    
+
     // 再生完了までウェイト
-    var _Game_Interpreter_updateWaitMode =
-        Game_Interpreter.prototype.updateWaitMode;
+    var _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
     Game_Interpreter.prototype.updateWaitMode = function() {
         var waiting = false;
         if (this._waitMode === 'ssAnim') {
@@ -674,7 +611,7 @@ SSP4MV.canUseFilter = (
         this._duration = 0;
     };
 
-    // アニメーションデータを読み込んでSsSpriteを作成
+    //　アニメーションデータを読み込んでSsSpriteを作成
     SsPlayer.prototype.loadAnimation = function (filename, x, y, loop, page) {
         var params;
         if (arguments[0] instanceof SSP4MV.SsPlayerArguments) {
@@ -707,63 +644,43 @@ SSP4MV.canUseFilter = (
         xhr.onload = function (params) {
             if (xhr.status < 400) {
                 this.jsonData = JSON.parse(xhr.responseText);
-                if (this._page === null) {
+                if (this._page === null)
                     this._page = this.searchPageByName(this._animname);
-                }
-                if (this._page === null) {
+                if (this._page === null)
                     return;
-                }
-                var imageList = new SsImageList(
-                    this.jsonData[this._page].images,
-                    SSP4MV.animationDir,
-                    true
-                );
-                var animation = new SsAnimation(
-                    this.jsonData[this._page].animation,
-                    imageList
-                );
+                var imageList = new SsImageList(this.jsonData[this._page].images,
+                        SSP4MV.animationDir, true);
+                var animation = new SsAnimation(this.jsonData[this._page].animation,
+                        imageList);
                 this.sprite = new SsSprite(animation);
                 this.updateSpriteStatus();
-                this.sprite.setEndCallBack(
-                    function() {
-                        if (this.sprite && this.sprite.getAnimation() !== null) {
-                            this.sprite.setAnimation(null);
-                        }
-                    }.bind(this)
-                );
+                this.sprite.setEndCallBack(function () {
+                    if (this.sprite && this.sprite.getAnimation() !== null)
+                        this.sprite.setAnimation(null);
+                } .bind(this));
             }
         } .bind(this, params);
         xhr.send();
     };
     
-    // アニメーションデータを別ページに変更
+    //　アニメーションデータを別ページに変更
     SsPlayer.prototype.changeAnimationPage = function (params) {
-        if (!(params instanceof SSP4MV.SsPlayerArguments)) {
+        if (!(params instanceof SSP4MV.SsPlayerArguments))
             return;
-        }
-        if (params.page === null && params.animname === "") {
+        if (params.page === null && params.animname === "")
             return;
-        }
         this._page = params.page;
         this._animname = params.animname;
-        if (!this.jsonData || !(this.jsonData instanceof Array)) {
+        if (!this.jsonData || !(this.jsonData instanceof Array))
             return;
-        }
-        if (this._page === null) {
+        if (this._page === null)
             this._page = this.searchPageByName(this._animname);
-        }
-        if (!this.jsonData[this._page]) {
+        if (!this.jsonData[this._page])
             return;
-        }
-        var imageList = new SsImageList(
-            this.jsonData[this._page].images,
-            SSP4MV.animationDir,
-            true
-        );
-        var animation = new SsAnimation(
-            this.jsonData[this._page].animation,
-            imageList
-        );
+        var imageList = new SsImageList(this.jsonData[this._page].images,
+                SSP4MV.animationDir, true);
+        var animation = new SsAnimation(this.jsonData[this._page].animation,
+                imageList);
         this.sprite.setAnimation(animation);
     };
     
@@ -782,29 +699,24 @@ SSP4MV.canUseFilter = (
 
     // ロード済みJSONデータから、指定した名前のアニメーションを後方一致で探す
     SsPlayer.prototype.searchPageByName = function(animname) {
-        if (typeof animname !== "string") {
+        if (typeof animname !== "string")
             return 0;
-        }
-        if (!this.jsonData || !(this.jsonData instanceof Array)) {
+        if (!this.jsonData || !(this.jsonData instanceof Array))
             return 0;
-        }
         var result = { animname: animname, index: 0 };
-        this.jsonData.forEach(
-            function(data, index) {
-                if ((new RegExp(this.animname+"$", "i")).test(data.name)) {
-                    this.index = index;
-                    return;
-                }
-            }, result
-        );
+        this.jsonData.forEach(function(data, index) {
+            if ((new RegExp(this.animname+"$", "i")).test(data.name)) {
+                this.index = index;
+                return;
+            }
+        }, result);
         return result.index;
     };
 
-    // SsSpriteオブジェクトの解放
+    //　SsSpriteオブジェクトの解放
     SsPlayer.prototype.dispose = function () {
-        if (this.sprite && this.sprite.getAnimation() !== null) {
+        if (this.sprite && this.sprite.getAnimation() !== null)
             this.sprite.setAnimation(null);
-        }
         this.sprite = null;
     };
     
@@ -814,7 +726,7 @@ SSP4MV.canUseFilter = (
         this.updateSprite();
     };
     
-    // 移動座標の更新
+    //　移動座標の更新
     SsPlayer.prototype.updateMove = function() {
         if (this._duration > 0) {
             var d = this._duration;
@@ -841,9 +753,8 @@ SSP4MV.canUseFilter = (
     };
     SsPlayer.prototype.updateSpriteStatus = function() {
         this.sprite.setStep(this._step);
-        if (this.sprite.getLoop() !== this._loop) {
+        if (this.sprite.getLoop() !== this._loop)
             this.sprite.setLoop(this._loop);
-        }
     };
     
     // 現在のシーンをセット
@@ -857,72 +768,44 @@ SSP4MV.canUseFilter = (
         }
     };
 
-    
     // 特定のシーンでアニメーションを表示できるか
     SsPlayer.prototype.isShowableInMap = function() {
-        return (
-            this._scene === SsPlayer.SCENE_MARK.all ||
-            this._scene === SsPlayer.SCENE_MARK.map
-        );
+        return (this._scene === SsPlayer.SCENE_MARK.all ||
+            this._scene === SsPlayer.SCENE_MARK.map);
     };
     SsPlayer.prototype.isShowableInBattle = function() {
-        return (
-            this._scene === SsPlayer.SCENE_MARK.all ||
-            this._scene === SsPlayer.SCENE_MARK.battle
-        );
+        return (this._scene === SsPlayer.SCENE_MARK.all ||
+            this._scene === SsPlayer.SCENE_MARK.battle);
     };
 
-    //-----------------------------------------------------------------------------
-    // Game_Screen
-    //
-    // スクリーン
-
-    // SSプレイヤーの再生
-    Game_Screen.prototype.playSsPlayer =
-        function (label, filename, x, y, loop, page)
-    {
-        var ssPlayer = new SsPlayer();
-        this.addToSsPlayList(label, ssPlayer);
-        ssPlayer.loadAnimation(filename, x, y, loop || 0, page);
-        ssPlayer.setScene();
-    };
-
-    // SSプレイヤーの停止
-    Game_Screen.prototype.stopSsPlayer = function (label) {
-        this.removeSsPlayerByLabel(label);
-    };
-    
-    // Game_Screenの初期化時にSsPlayer配列の初期化
+    //　Game_Screenの初期化時にSsPlayer配列の初期化
     var _Game_Screen_clear = Game_Screen.prototype.clear;
     Game_Screen.prototype.clear = function () {
         _Game_Screen_clear.call(this);
         this.clearSsPlayList();
     };
-    
-    // SsPlayer配列の初期化
+
+    //　SsPlayer配列の初期化
     Game_Screen.prototype.clearSsPlayList = function () {
         this._ssPlayList = {};
     };
 
-    // SsPlayer配列の初期化がされているか確認、されていなければ初期化
+    //　SsPlayer配列の初期化がされているか確認、されていなければ初期化
     Game_Screen.prototype.checkSsPlayListDefined = function () {
-        if (this._ssPlayList === undefined) {
+        if (this._ssPlayList === undefined)
             this.clearSsPlayList();
-        }
     };
     
-    // ラベル名を指定してSsPlayerを追加
+    //　ラベル名を指定してSsPlayerを追加
     Game_Screen.prototype.addToSsPlayList = function (label, player) {
         this.checkSsPlayListDefined();
-        if (label in this._ssPlayList &&
-            this._ssPlayList[label] instanceof SsPlayer)
-        {
+        if (label in this._ssPlayList && this._ssPlayList[label] instanceof SsPlayer) {
             this.removeSsPlayerByLabel(label);
         }
         this._ssPlayList[label] = player;
     };
 
-    // ラベル名を指定してSsPlayerの削除
+    //　ラベル名を指定してSsPlayerの削除
     Game_Screen.prototype.removeSsPlayerByLabel = function (label) {
         this.checkSsPlayListDefined();
         if (this.getSsPlayerByLabel(label)) {
@@ -931,61 +814,49 @@ SSP4MV.canUseFilter = (
         }
     };
 
-    // ラベル名からSsPlayerオブジェクトを取得
+    //　ラベル名からSsPlayerオブジェクトを取得
     Game_Screen.prototype.getSsPlayerByLabel = function (label) {
         this.checkSsPlayListDefined();
         return this._ssPlayList[label];
     };
 
-    // 作成済みのSsPlayerオブジェクトからSsSpriteオブジェクトを集めて返す(非ピクチャレイヤー)
+    //　作成済みのSsPlayerオブジェクトからSsSpriteオブジェクトを集めて返す(非ピクチャレイヤー)
     Game_Screen.prototype.getSsSprites = function () {
         this.checkSsPlayListDefined();
         var result = [];
         for (var key in this._ssPlayList) {
             var player = this._ssPlayList[key];
-            if (!!player && player.sprite != null && (isNaN(Number(key))) &&
-                (
-                    ($gameParty.inBattle() && player.isShowableInBattle()) ||
-                    (!$gameParty.inBattle() && player.isShowableInMap())
-                )
-            ) {
+            if (!!player && player.sprite != null && (isNaN(Number(key)))
+            && (($gameParty.inBattle() && player.isShowableInBattle())
+            || (!$gameParty.inBattle() && player.isShowableInMap()))) {
                 result.push(this._ssPlayList[key].sprite);
             }
         }
         return result;
     };
 
-    // ピクチャの消去
-    var _Game_Screen_erasePicture =
-        Game_Screen.prototype.erasePicture;
+    var _Game_Screen_erasePicture = Game_Screen.prototype.erasePicture;
     Game_Screen.prototype.erasePicture = function(pictureId) {
         _Game_Screen_erasePicture.call(this, pictureId);
         $gameScreen.removeSsPlayerByLabel(String(pictureId));
     };
 
     // SsPlayerのアップデート
-    var ssGameScreenUpdate =
-        Game_Screen.prototype.update;
+    var ssGameScreenUpdate = Game_Screen.prototype.update;
     Game_Screen.prototype.update = function() {
         ssGameScreenUpdate.call(this);
         this.checkSsPlayListDefined();
-        Object.keys(this._ssPlayList).forEach(
-            function(key) {
-                // ピクチャ紐付きのアニメーションの座標は更新しない
-                if (!isNaN(Number(key))) {
-                    return
-                };
-                var player = this._ssPlayList[key];
-                if (player instanceof SsPlayer) {
-                    player.update();
-                }
-            }, this
-        );
+        Object.keys(this._ssPlayList).forEach(function(key) {
+            // ピクチャ紐付きのアニメーションの座標は更新しない
+            if (!isNaN(Number(key))) return;
+            var player = this._ssPlayList[key];
+            if (player instanceof SsPlayer)
+                player.update();
+        },this);
     };
 
-    // ビットマップのアップデート
-    var _Sprite_Picture_updateBitmap =
-        Sprite_Picture.prototype.updateBitmap;
+    //
+    var _Sprite_Picture_updateBitmap = Sprite_Picture.prototype.updateBitmap;
     Sprite_Picture.prototype.updateBitmap = function() {
         _Sprite_Picture_updateBitmap.call(this);
         var player = $gameScreen.getSsPlayerByLabel(String(this._pictureId));
@@ -994,12 +865,10 @@ SSP4MV.canUseFilter = (
             return;
         }
         if (player && player.sprite) {
-            if (this.children.indexOf(player.sprite) < 0 &&
-                (
-                    ($gameParty.inBattle() && player.isShowableInBattle()) ||
-                    (!$gameParty.inBattle() && player.isShowableInMap())
-                )
-            ) {                
+            if (this.children.indexOf(player.sprite) < 0 && (
+                ($gameParty.inBattle() && player.isShowableInBattle()) ||
+                (!$gameParty.inBattle() && player.isShowableInMap())
+            )) {                
                 this.addChild(player.sprite);
             }
         } else {
@@ -1007,9 +876,7 @@ SSP4MV.canUseFilter = (
         }
     };
 
-    // ビットマップのロード
-    var _Sprite_Picture_loadBitmap =
-        Sprite_Picture.prototype.loadBitmap;
+    var _Sprite_Picture_loadBitmap = Sprite_Picture.prototype.loadBitmap;
     Sprite_Picture.prototype.loadBitmap = function(){
         if (this._pictureName === '__ssdummy__') {
             this.bitmap = ImageManager.loadEmptyBitmap();
@@ -1018,45 +885,40 @@ SSP4MV.canUseFilter = (
         }
     };
 
-    // SpriteSet作成時にSsSpriteオブジェクトを作成
-    var _Spriteset_Base_createUpperLayer =
-        Spriteset_Base.prototype.createUpperLayer;
+    //　SpriteSet作成時にSsSpriteオブジェクトを作成
+    var _Spriteset_Base_createUpperLayer = Spriteset_Base.prototype.createUpperLayer;
     Spriteset_Base.prototype.createUpperLayer = function () {
         _Spriteset_Base_createUpperLayer.call(this);
         this.createSsSprites();
     };
 
-    // SsSpriteを格納するSpriteを作成
+    //　SsSpriteを格納するSpriteを作成
     Spriteset_Base.prototype.createSsSprites = function () {
         this._ssContainer = new Sprite();
         this.addChild(this._ssContainer);
     };
     
-    // SpriteSetフレーム更新
-    var _Spriteset_Base_update =
-        Spriteset_Base.prototype.update;
+    //　SpriteSetフレーム更新
+    var _Spriteset_Base_update = Spriteset_Base.prototype.update;
     Spriteset_Base.prototype.update = function () {
         _Spriteset_Base_update.call(this);
         this.updateSsContainer();
     };
 
-    // SsPlayerの状態を監視し、SsSpriteオブジェクトを更新
+    //　SsPlayerの状態を監視し、SsSpriteオブジェクトを更新
     Spriteset_Base.prototype.updateSsContainer = function () {
         var preparedSprites = $gameScreen.getSsSprites();
-        preparedSprites.forEach(
-            function (sprite) {
-                if (this._ssContainer.children.indexOf(sprite) < 0) {
-                    this._ssContainer.addChild(sprite);
-                }
-            }, this
-        );
-        this._ssContainer.children.forEach(
-            function (sprite) {
-                if (preparedSprites.indexOf(sprite) < 0) {
-                    this._ssContainer.removeChild(sprite);
-                }
-            }, this
-        );
+        preparedSprites.forEach(function (sprite, index) {
+            if (this._ssContainer.children.indexOf(sprite) < 0) {
+                this._ssContainer.addChild(sprite);
+            }
+        }, this);
+
+        this._ssContainer.children.forEach(function (sprite, index) {
+            if (preparedSprites.indexOf(sprite) < 0) {
+                this._ssContainer.removeChild(sprite);
+            }
+        }, this);
     };
 
 })();
@@ -1078,14 +940,11 @@ function SsImageList(imageFiles, aFileRoot, loadImmediately, aOnLoad) {
     // 全部読み込まれた場合のみユーザーが設定したコールバックを呼ぶ
     // Only when it is all loaded, is called a callback set by the user.
     this.onLoad_ = function () {
-        for (var i in this.images) {
-            if (i != null && i.complete == false) {
+        for (var i in this.images)
+            if (i != null && i.complete == false)
                 return;
-            }
-        }
-        if (this.onLoad != null) {
+        if (this.onLoad != null)
             this.onLoad();
-        }
     };
 
     for (var i = 0; i < imageFiles.length; i++) {
@@ -1103,18 +962,16 @@ function SsImageList(imageFiles, aFileRoot, loadImmediately, aOnLoad) {
 // 指定したインデックスのImageを返す
 // Get image at specified index.
 SsImageList.prototype.getImage = function (index) {
-    if (index < 0 || index >= this.images.length) {
+    if (index < 0 || index >= this.images.length)
         return null;
-    }
     return this.images[index];
 };
 
 // 指定したインデックスの画像をimagePathで差し替える。
 // Replace image of specified index at imagePath.
 SsImageList.prototype.setImage = function (index, imagePath) {
-    if (index < 0 || index >= this.images.length) {
+    if (index < 0 || index >= this.images.length)
         return null;
-    }
     this.imagePaths[index] = this.fileRoot + imagePath;
     this.images[index].onload = this.onLoad_;
     this.images[index].src = this.imagePaths[index];
@@ -1131,6 +988,7 @@ SsImageList.prototype.setOnLoad = function (cb) {
 // //////////////////////////////////////////////////////////
 
 function SsPartState(name) {
+
     // パーツ名
     // Parts name.
     this.name = name;
@@ -1175,19 +1033,11 @@ SsPartData.prototype.getSourceHeight = function () {
 };
 
 SsPartData.prototype.getSourcePosition = function () {
-    return new Point(
-        this.getSourceX(),
-        this.getSourceY()
-    );
+    return new Point(this.getSourceX(), this.getSourceY());
 };
 
 SsPartData.prototype.getSourceRect = function () {
-    return new Rectangle(
-        this.getSourceX(),
-        this.getSourceY(),
-        this.getSourceWidth(),
-        this.getSourceHeight()
-    );
+    return new Rectangle(this.getSourceX(), this.getSourceY(), this.getSourceWidth(), this.getSourceHeight());
 };
 
 SsPartData.prototype.getDestX = function () {
@@ -1257,16 +1107,8 @@ SsPartData.prototype.getTranslates = function () {
 
 SsPartData.prototype.hasTranslates = function () {
     if (this._length >= 17 &&
-        (
-            this._data.slice(17, 24).some(
-                function(i) {
-                    return (i !== 0);
-                }
-            )
-        )
-    ) {
+        (this._data.slice(17, 24).some(function(i){return (i !== 0);})))
         return true;
-    }
     return false;
 };
 
@@ -1315,43 +1157,29 @@ SsAnimation.prototype.getPartsMap = function () {
 
 // 基準枠の幅・高さ・原点情報があれば返す
 SsAnimation.prototype.getCanvasWidth = function () {
-    return (this.ssaData.CanvasWidth ?
-        this.ssaData.CanvasWidth :
-        0
-    );
+    return (this.ssaData.CanvasWidth ? this.ssaData.CanvasWidth : 0);
 };
 SsAnimation.prototype.getCanvasHeight = function () {
-    return (this.ssaData.CanvasHeight ?
-        this.ssaData.CanvasHeight :
-        0
-    );
+    return (this.ssaData.CanvasHeight ? this.ssaData.CanvasHeight : 0);
 };
 SsAnimation.prototype.getMarginWidth = function () {
-    return (this.ssaData.MarginWidth ?
-        this.ssaData.MarginWidth :
-        0
-    );
+    return (this.ssaData.MarginWidth ? this.ssaData.MarginWidth : 0);
 };
 SsAnimation.prototype.getMarginHeight = function () {
-    return (this.ssaData.MarginHeight ?
-        this.ssaData.MarginHeight :
-        0
-    );
+    return (this.ssaData.MarginHeight ? this.ssaData.MarginHeight : 0);
 };
 
 // 画像ファイル名からBitmapオブジェクトをロード
 // Return a Bitmap object from file path.
 SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone) {
     // 判定が重いのでキャッシュ
-    if (this._isMobileDevice === undefined) {
+    if (this._isMobileDevice === undefined)
         this._isMobileDevice = Utils.isMobileDevice();
-    }
-    if (!Array.isArray(blendColor)) {
+    
+    if (!Array.isArray(blendColor))
         blendColor = [0, 0, 0, 0];
-    }
-    if (!Array.isArray(colorTone)) {
+    if (!Array.isArray(colorTone))
         colorTone = [0, 0, 0, 0];
-    }
     // 色調変更範囲制限がONかつモバイル端末の場合は16段階に制限
     if (SSP4MV.tintColorLimited && this._isMobileDevice) {
         for (var i=0; i < 4; i++) {
@@ -1369,20 +1197,16 @@ SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone
     }
 
     // WebGLモードで色調変更にフィルタを用いる場合、色調変更はSprite側に任せるのでそのまま返す
-    if (!this._bitmaps[filepath + String(hue)].isReady ||
-        SSP4MV.canUseFilter()
-    ) {
-        return this._bitmaps[filepath + String(hue)];
+    if (!this._bitmaps[filepath + String(hue)].isReady || SSP4MV.canUseFilter()) {
+        return this._bitmaps[filepath + String(hue)]
     } else {
         // blendColor / colorTone が指定されたとき、着色処理したビットマップをキャッシュ
         if (!this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')]) {
-            if (blendColor.some(function(i) {return i !== 0}) ||
-                colorTone.some(function(i) {return i !== 0})
-            ) {
+            if (blendColor.some(function(i){return i != 0}) || colorTone.some(function(i){return i != 0})) {
                 var tinted = this.createTintedBitmap(this._bitmaps[filepath + String(hue)], colorTone, blendColor);
                 if (tinted !== null) {
                     this._bitmaps[filepath + String(hue) + blendColor.join('') + colorTone.join('')] = tinted;
-                } else {
+                }else{
                     blendColor = [0, 0, 0, 0];
                     colorTone = [0, 0, 0, 0];
                 }
@@ -1399,19 +1223,17 @@ SsAnimation.prototype.getBitmap = function (filepath, hue, blendColor, colorTone
 // Return a Sprite object of the generated from partNo. If there is no return to create a new one.
 SsAnimation.prototype.getPartSprite = function (partNo, bitmap, subPartNo) {
     if (partNo <= 1 && typeof subPartNo === 'number') {
-        if (!Array.isArray(this._partSprites[partNo])) {
-            this._partSprites[partNo] = [];
-        }
+        if (!Array.isArray(this._partSprites[partNo])) this._partSprites[partNo] = []; 
         if (!this._partSprites[partNo][subPartNo]) {
             this._partSprites[partNo][subPartNo] = new Sprite(bitmap);
-        } else {
+        }else {
             this._partSprites[partNo][subPartNo].bitmap = bitmap;
         }
         return this._partSprites[partNo][subPartNo];
     } else {
         if (!this._partSprites[partNo]) {
             this._partSprites[partNo] = new Sprite(bitmap);
-        } else {
+        }else {
             this._partSprites[partNo].bitmap = bitmap;
         }
         return this._partSprites[partNo];
@@ -1422,15 +1244,12 @@ SsAnimation.prototype.getPartSprite = function (partNo, bitmap, subPartNo) {
 // Return a Strip object of the generated from partNo. If there is no return to create a new one.
 SsAnimation.prototype.getPartMesh = function (partNo, bitmap, subPartNo) {
     if (partNo <= 1 && typeof subPartNo === 'number') {
-        if (!Array.isArray(this._partMeshs[partNo])) {
-            this._partMeshs[partNo] = [];
-        }
+        if (!Array.isArray(this._partMeshs[partNo])) this._partMeshs[partNo] = []; 
         if (!this._partMeshs[partNo][subPartNo]) {
             this._partMeshs[partNo][subPartNo] = this.createNewMesh(bitmap);
+        // bitmapの状態が変わったとき作り直す
         } else if ((this._partMeshs[partNo][subPartNo].texture._bitmapUrl !== bitmap.url) ||
-                    (!this._partMeshs[partNo][subPartNo].texture._bitmapReady && bitmap.isReady())
-        ) {
-            // bitmapの状態が変わったとき作り直す
+                    (!this._partMeshs[partNo][subPartNo].texture._bitmapReady && bitmap.isReady())) {
             this._partMeshs[partNo][subPartNo].destroy();
             this._partMeshs[partNo][subPartNo] = this.createNewMesh(bitmap);
         }
@@ -1438,10 +1257,9 @@ SsAnimation.prototype.getPartMesh = function (partNo, bitmap, subPartNo) {
     } else {
         if (!this._partMeshs[partNo]) {
             this._partMeshs[partNo] = this.createNewMesh(bitmap);
+        // bitmapの状態が変わったとき作り直す
         } else if ((this._partMeshs[partNo].texture._bitmapUrl !== bitmap.url) ||
-                    (!this._partMeshs[partNo].texture._bitmapReady && bitmap.isReady())
-        ) {
-            // bitmapの状態が変わったとき作り直す
+                    (!this._partMeshs[partNo].texture._bitmapReady && bitmap.isReady())) {
             this._partMeshs[partNo].destroy();
             this._partMeshs[partNo] = this.createNewMesh(bitmap);
         }
@@ -1452,16 +1270,11 @@ SsAnimation.prototype.getPartMesh = function (partNo, bitmap, subPartNo) {
 // Meshオブジェクトの新規作成
 // Create a new Mesh object.
 SsAnimation.prototype.createNewMesh = function(bitmap) {
-    var verts = new Float32Array([0, 0, 300, 0, 0, 300, 400, 400]);
-    var uvs = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
-    var triangles = new Uint16Array([0, 1, 2, 3, 2, 1]);
-    var mesh = new PIXI.mesh.Mesh(
-        new PIXI.Texture(bitmap.baseTexture),
-        verts,
-        uvs,
-        triangles,
-        PIXI.mesh.Mesh.DRAW_MODES.TRIANGLES
-    );
+        var verts = new Float32Array([0, 0, 300, 0, 0, 300, 400, 400]);
+        var uvs = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
+        var triangles = new Uint16Array([0, 1, 2, 3, 2, 1]);
+    var mesh = new PIXI.mesh.Mesh(new PIXI.Texture(bitmap.baseTexture), verts, uvs, triangles,
+        PIXI.mesh.Mesh.DRAW_MODES.TRIANGLES);
     mesh.texture._bitmapUrl = bitmap.url;
     mesh.texture._bitmapReady = bitmap.isReady();
     
@@ -1470,19 +1283,14 @@ SsAnimation.prototype.createNewMesh = function(bitmap) {
 
 // 描画メソッド
 // Draw method.
-SsAnimation.prototype.getPartSprites =
-    function (frameNo, flipH, flipV, partStates, scale, hue, blendColor, colorTone)
-{
+SsAnimation.prototype.getPartSprites = function (frameNo, flipH, flipV,
+        partStates, scale, hue, blendColor, colorTone) {
     var sprites = [];
     var subSpriteNum = [0,0];
     var subMeshNum = [0,0];
 
-    var blendOperations = new Array(
-        PIXI.BLEND_MODES.NORMAL,
-        PIXI.BLEND_MODES.MULTIPLY,
-        PIXI.BLEND_MODES.ADD,
-        PIXI.BLEND_MODES.DIFFERENCE
-    );
+    var blendOperations = new Array(PIXI.BLEND_MODES.NORMAL, PIXI.BLEND_MODES.MULTIPLY, PIXI.BLEND_MODES.ADD,
+            PIXI.BLEND_MODES.DIFFERENCE);
 
     var frameData = this.ssaData.ssa[frameNo];
     var frameLength = frameData.length;
@@ -1498,6 +1306,9 @@ SsAnimation.prototype.getPartSprites =
         var sh = partData.getSourceHeight();
         var dx = partData.getDestX();
         var dy = partData.getDestY();
+
+        var vdw = sw;
+        var vdh = sh;
 
         if (sw > 0 && sh > 0) {
 
@@ -1524,24 +1335,20 @@ SsAnimation.prototype.getPartSprites =
                 }
                 var texW = bitmap.width;
                 var texH = bitmap.height;
-                var verts = new Float32Array(
-                    [
-                        (-ox + translate[0]), (-oy + translate[1]),
-                        (sw - ox + translate[2]), (-oy + translate[3]), 
-                        (-ox + translate[4]), (sh - oy + translate[5]), 
-                        (sw - ox + translate[6]), (sh - oy + translate[7])
-                    ]
-                );
-                var uvs = new Float32Array(
-                    [
-                        (sx + (fh == -1 ? sw : 0)) / texW, (sy + (fv == -1 ? sh : 0)) / texH,
-                        (sx + (fh == -1 ? 0 : sw)) / texW, (sy + (fv == -1 ? sh : 0)) / texH,
-                        (sx + (fh == -1 ? sw : 0)) / texW, (sy + (fv == -1 ? 0 : sh)) / texH,
-                        (sx + (fh == -1 ? 0 : sw)) / texW, (sy + (fv == -1 ? 0 : sh)) / texH
-                    ]
-                );
+                var verts = new Float32Array([
+                    (-ox + translate[0]), (-oy + translate[1]),
+                    (sw - ox + translate[2]), (-oy + translate[3]), 
+                    (-ox + translate[4]), (sh - oy + translate[5]), 
+                    (sw - ox + translate[6]), (sh - oy + translate[7])
+                    ]);
+                var uvs = new Float32Array([
+                (sx + (fh == -1 ? sw : 0)) / texW, (sy + (fv == -1 ? sh : 0)) / texH,
+                (sx + (fh == -1 ? 0 : sw)) / texW, (sy + (fv == -1 ? sh : 0)) / texH,
+                (sx + (fh == -1 ? sw : 0)) / texW, (sy + (fv == -1 ? 0 : sh)) / texH,
+                (sx + (fh == -1 ? 0 : sw)) / texW, (sy + (fv == -1 ? 0 : sh)) / texH
+                ]);
 
-                for (var i = 0; i < 8; i++) {
+                for (var i=0; i<8; i++) {
                     spr_part.vertices[i] = verts[i];
                     spr_part.uvs[i] = uvs[i];
                 }
@@ -1557,12 +1364,10 @@ SsAnimation.prototype.getPartSprites =
                 }
                 spr_part.setFrame(sx, sy, sw, sh);
                 spr_part.anchor = new PIXI.Point(ox * 1.0 / sw, oy * 1.0 / sh);
-                if (fh == -1) {
+                if (fh == -1)
                     spr_part.anchor.x = 1 - spr_part.anchor.x;
-                }
-                if (fv == -1) {
+                if (fv == -1)
                     spr_part.anchor.y = 1 - spr_part.anchor.y;
-                }
                 spr_part.scale = new PIXI.Point(scaleX * fh, scaleY * fv);
                 spr_part.opacity = Math.round(255 * alpha);
             }
@@ -1651,7 +1456,7 @@ SsAnimation.prototype.createTintedBitmap = function (bitmap, tone, color) {
 SsAnimation.prototype.isReady = function () {
     if (Object.keys(this._bitmaps).length === 0) return false;
     var result = true;
-    for (var key in this._bitmaps) {
+    for (var key in this._bitmaps){
         if (this._bitmaps.hasOwnProperty(key) && this._bitmaps[key] instanceof Bitmap) {
             result = result && this._bitmaps[key].isReady();
         }
@@ -1690,12 +1495,7 @@ ColorBlendFilter = function () {
         // fragment shader
         fragmentSrc,
         // custom uniforms
-        {
-            blendColor : {
-                type: '4fv',
-                value: new Float32Array([0, 0, 0, 0])
-            }
-        }
+    　　 {blendColor : { type: '4fv', value: new Float32Array([0, 0, 0, 0]) }}
     );
 };
 
@@ -1839,36 +1639,25 @@ SsSprite.prototype.setEndCallBack = function (func) {
 // パーツの状態（現在のX,Y座標など）を取得
 // Gets the state of the parts. (Current x and y positions)
 SsSprite.prototype.getPartState = function (name) {
-    if (this.inner.partStates == null) {
+    if (this.inner.partStates == null)
         return null;
-    }
+
     var partsMap = this.inner.animation.getPartsMap();
     var partNo = partsMap[name];
-    if (partNo == null) {
+    if (partNo == null)
         return null;
-    }
     return this.inner.partStates[partNo];
 };
 
 // 幅、高さを取得
 SsSprite.prototype.getWidth = function() {
-    if (!this.inner.animation) {
-        return 0;
-    }    
-    return (this.inner.animation.getCanvasWidth() ?
-        this.inner.animation.getCanvasWidth() :
-        this.frameWidth()
-    );
+    if (!this.inner.animation) return 0;    
+    return (this.inner.animation.getCanvasWidth() ? this.inner.animation.getCanvasWidth() : this.frameWidth())
 };
 
 SsSprite.prototype.getHeight = function() {
-    if (!this.inner.animation) {
-        return 0;
-    }    
-    return (this.inner.animation.getCanvasHeight() ?
-        this.inner.animation.getCanvasHeight() :
-        this.frameHeight()
-    );
+    if (!this.inner.animation) return 0;    
+    return (this.inner.animation.getCanvasHeight() ? this.inner.animation.getCanvasHeight() : this.frameHeight())
 };
 
 
@@ -1876,31 +1665,19 @@ SsSprite.prototype.getHeight = function() {
 // Get width and height (inaccuracy value) of this frame.
 SsSprite.prototype.frameWidth = function () {
     var min = 0, max = 0;
-    if (!Array.isArray(this.inner.partStates)) {
-        return 0;
-    }
+    if (!Array.isArray(this.inner.partStates)) return 0;
     for (var i = 0; i < this.inner.partStates.length; i++) {
-        if (min < this.inner.partStates[i].x) {
-            min = this.inner.partStates[i].x;
-        }
-        if (max > this.inner.partStates[i].x) {
-            max = this.inner.partStates[i].x;
-        }
+        if (min < this.inner.partStates[i].x) min = this.inner.partStates[i].x;
+        if (max > this.inner.partStates[i].x) max = this.inner.partStates[i].x;
     }
     return Math.abs(max - min);
 };
 SsSprite.prototype.frameHeight = function () {
     var min = 0, max = 0;
-    if (!Array.isArray(this.inner.partStates)) {
-        return 0;
-    }
+    if (!Array.isArray(this.inner.partStates)) return 0;
     for (var i = 0; i < this.inner.partStates.length; i++) {
-        if (min < this.inner.partStates[i].y) {
-            min = this.inner.partStates[i].y;
-        }
-        if (max > this.inner.partStates[i].y) {
-            max = this.inner.partStates[i].y;
-        }
+        if (min < this.inner.partStates[i].y) min = this.inner.partStates[i].y;
+        if (max > this.inner.partStates[i].y) max = this.inner.partStates[i].y;
     }
     return Math.abs(max - min);
 };
@@ -1940,15 +1717,15 @@ SsSprite.prototype.update = function () {
     if (this.children.length > 0) {
         this.removeChildren(0, this.children.length);
     }
-    if (!this.inner.animation) {
+
+    if (!this.inner.animation)
         return;
-    }
+
     if (this.isPlaying()) {
         // フレームを進める
         // To next frame.
-        this.inner.playingFrame +=
-            (1.0 / (60 / this.inner.animation.getFPS())) *
-            this.inner.step;
+        this.inner.playingFrame += (1.0 / (60 / this.inner.animation.getFPS()))
+                * this.inner.step;
 
         var c = (this.inner.playingFrame / this.inner.animation.getFrameCount()) >> 0;
 
@@ -1957,9 +1734,8 @@ SsSprite.prototype.update = function () {
                 // ループ回数更新
                 // Update repeat count.
                 this.inner.loopCount += c;
-                if (this.inner.loop == 0 ||
-                    this.inner.loopCount < this.inner.loop)
-                {
+                if (this.inner.loop == 0
+                        || this.inner.loopCount < this.inner.loop) {
                     // フレーム番号更新、再生を続ける
                     // Update frame no, and playing.
                     this.inner.playingFrame %= this.inner.animation
@@ -1981,22 +1757,20 @@ SsSprite.prototype.update = function () {
                 // ループ回数更新
                 // Update repeat count.
                 this.inner.loopCount += 1 + -c;
-                if (this.inner.loop == 0 ||
-                    this.inner.loopCount < this.inner.loop
-                ) {
+                if (this.inner.loop == 0
+                        || this.inner.loopCount < this.inner.loop) {
                     // フレーム番号更新、再生を続ける
                     // Update frame no, and playing.
-                    this.inner.playingFrame %=
-                        this.inner.animation.getFrameCount();
-                    if (this.inner.playingFrame < 0) {
-                        this.inner.playingFrame +=
-                            this.inner.animation.getFrameCount();
-                    }
+                    this.inner.playingFrame %= this.inner.animation
+                            .getFrameCount();
+                    if (this.inner.playingFrame < 0)
+                        this.inner.playingFrame += this.inner.animation
+                                .getFrameCount();
                 } else {
                     // 再生停止、最終フレームへ
                     // Stop animation, to last frame.
-                    this.inner.playingFrame =
-                        this.inner.animation.getFrameCount() - 1;
+                    this.inner.playingFrame = this.inner.animation
+                            .getFrameCount() - 1;
                     // 停止時コールバック呼び出し
                     // Call finished callback.
                     if (this.inner.endCallBack != null) {
@@ -2010,30 +1784,21 @@ SsSprite.prototype.update = function () {
         // // Stop animation.
         //this.inner.playingFrame = 0;
     }
-    if (!!this.inner.animation) {
-        this.inner.animation.getPartSprites(
-            this.getFrameNo(),
-            this.flipH,
-            this.flipV,
-            this.inner.partStates,
-            this.scale,
-            this.inner.hue,
-            this.getBlendColor(),
-            this.getColorTone()
-        ).forEach(
-            function(val) {
-                if (this.blendMode != 0) {
-                    val.blendMode = this.blendMode;
-                    if (val._toneFilter instanceof ToneFilter) {
-                        val._toneFilter.blendMode = this.blendMode;
+    if (this.inner.animation) {
+        this.inner.animation.getPartSprites(this.getFrameNo(), this.flipH,
+            this.flipV, this.inner.partStates, this.scale, this.inner.hue,
+            this.getBlendColor(), this.getColorTone()).forEach(
+                function(val, index, ar) {
+                    if (this.blendMode != 0) {
+                        val.blendMode = this.blendMode;
+                        if (val._toneFilter instanceof ToneFilter)
+                            val._toneFilter.blendMode = this.blendMode;
+                        if (val._blendFilter instanceof ColorBlendFilter)
+                            val._blendFilter.blendMode = this.blendMode;
                     }
-                    if (val._blendFilter instanceof ColorBlendFilter) {
-                        val._blendFilter.blendMode = this.blendMode;
-                    }
-                }
-                this.addChild(val);
-            }, this
-        );
+                    this.addChild(val);
+                }, this);
+
         // WebGLモードで色調変更にフィルタを用いる場合、フィルタを適用
         if (SSP4MV.canUseFilter()) {
             if (! this._toneFilter) {
